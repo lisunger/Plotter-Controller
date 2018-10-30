@@ -24,7 +24,6 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     // 00001101-0000-1000-8000-00805f9b34fb
-    // 00000000-0000-1000-8000-00805f9b34fb
     private static final String TAG = "Lisko";
     private static final String HC05_MAC_ADDRESS = "00:18:E4:00:78:F9";
     private static final int REQUEST_ENABLE_BT = 1;
@@ -67,11 +66,9 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     if(device.getAddress().equals(HC05_MAC_ADDRESS)) {
                         // TODO connect devices
-                        //device.createRfcommSocketToServiceRecord()
                         Log.d(TAG, "Found HC-05!");
                         mHc05device = device;
                         connectToHc05();
-                        //device.createBond();
                     }
                     break;
                 }
@@ -203,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectToHc05() {
+        mBluetoothAdapter.cancelDiscovery();
         try {
             BluetoothSocket socket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
             socket.connect();
