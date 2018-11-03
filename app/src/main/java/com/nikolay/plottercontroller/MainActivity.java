@@ -11,10 +11,18 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -25,13 +33,14 @@ public class MainActivity extends AppCompatActivity {
 
     // 00001101-0000-1000-8000-00805f9b34fb
     private static final String TAG = "Lisko";
+    private static final String TAG_FRAGMENT = "lisko";
     private static final String HC05_MAC_ADDRESS = "00:18:E4:00:78:F9";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_LOCATION = 2;
 
-    private Button mButtonScan;
-
     private boolean mScanning = false;
+    private boolean mConnected = false;
+    private Fragment mActiveFragment;
 
     BluetoothAdapter mBluetoothAdapter;
     BluetoothDevice mHc05device;
@@ -62,31 +71,41 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             switch(action) {
-                case BluetoothDevice.ACTION_FOUND : {
+                case BluetoothDevice.ACTION_FOUND : { // Device found
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     if(device.getAddress().equals(HC05_MAC_ADDRESS)) {
-                        // TODO connect devices
                         Log.d(TAG, "Found HC-05!");
                         mHc05device = device;
                         connectToHc05();
                     }
                     break;
                 }
-                case BluetoothAdapter.ACTION_DISCOVERY_STARTED : {
+                case BluetoothAdapter.ACTION_DISCOVERY_STARTED : { // Scan started
                     Log.d(TAG, "Scan started");
                     mScanning = true;
-                    mButtonScan.setText("STOP");
+                    ((ScanFragment) mActiveFragment).startScanning();
                     break;
                 }
-                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED : {
+                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED : { // Scan stopped
                     Log.d(TAG, "Scan stopped");
                     mScanning = false;
-                    mButtonScan.setText("SCAN");
+                    ((ScanFragment) mActiveFragment).stopScanning();
                     break;
                 }
-                case BluetoothDevice.ACTION_BOND_STATE_CHANGED : {
+                case BluetoothDevice.ACTION_BOND_STATE_CHANGED : { // A device paired/unpaired
                     Log.d(TAG, action);
+                    int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                    if(bondState == BluetoothDevice.BOND_NONE) {
+                        Log.d(TAG, "NO bond");
+                    }
+                    if(bondState == BluetoothDevice.BOND_BONDING) {
+                        Log.d(TAG, "BONDING bond");
+                    }
+                    if(bondState == BluetoothDevice.BOND_BONDED) {
+                        Log.d(TAG, "BONDED bond");
+                    }
                     // TODO connect
+
                 }
             }
         }
@@ -96,29 +115,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        addScanFragment();
 
         requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, REQUEST_PERMISSION_LOCATION);
-
-        mButtonScan = findViewById(R.id.buttonScan);
-        if(mScanning) {
-            mButtonScan.setText("STOP");
-        }
-        else {
-            mButtonScan.setText("SCAN");
-        }
-        mButtonScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-//                mBluetoothAdapter.startDiscovery();
-
-                if(mScanning) {
-                    mBluetoothAdapter.cancelDiscovery();
-                }
-                else {
-                    mBluetoothAdapter.startDiscovery();
-                }
-            }
-        });
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null) {
@@ -153,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
             // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
                 if(device.getAddress().equals(HC05_MAC_ADDRESS)) {
-
+                    //TODO something...
                 }
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
@@ -161,7 +161,27 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, deviceHardwareAddress);
             }
         }
-        //
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.menu_scan : {
+                Log.d(TAG, "Should I scan or should I go now?");
+                if(!mScanning) {
+                    mBluetoothAdapter.startDiscovery();
+                }
+                break;
+            }
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -199,13 +219,28 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mDeviceFoundReceiver);
     }
 
+    private void addScanFragment() {
+        mActiveFragment = new ScanFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.add(R.id.fragment_container, mActiveFragment, TAG_FRAGMENT);
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+        transaction.addToBackStack(null);
+        transaction.commit();
+    }
+
     private void connectToHc05() {
         mBluetoothAdapter.cancelDiscovery();
         try {
             BluetoothSocket socket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
+            Log.d(TAG, "connected: " + socket.isConnected());
             socket.connect();
+            Log.d(TAG, "connected: " + socket.isConnected());
+            mConnected = true;
+            socket.
+
         } catch (IOException e) {
             e.printStackTrace();
+            mConnected = false;
         }
     }
 }
