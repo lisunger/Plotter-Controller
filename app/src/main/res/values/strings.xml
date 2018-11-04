@@ -2,5 +2,6 @@
     <string name="app_name">Plotter Controller</string>
 
     <string name="menu_scan">Scan</string>
+    <string name="menu_disconnect">Disconnect</string>
     <string name="label_startScan">Click the Scan icon in the toolbar to scan for the device.</string>
 </resources>

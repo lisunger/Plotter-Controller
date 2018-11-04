@@ -1,18 +1,14 @@
 package com.nikolay.plottercontroller;
 
-import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -20,31 +16,28 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
     // 00001101-0000-1000-8000-00805f9b34fb
-    private static final String TAG = "Lisko";
-    private static final String TAG_FRAGMENT = "lisko";
-    private static final String HC05_MAC_ADDRESS = "00:18:E4:00:78:F9";
-    private static final int REQUEST_ENABLE_BT = 1;
-    private static final int REQUEST_PERMISSION_LOCATION = 2;
+    public static final String TAG = "Lisko";
+    public static final String HC05_MAC_ADDRESS = "00:18:E4:00:78:F9";
+    public static final int REQUEST_ENABLE_BT = 1;
+    public static final int REQUEST_PERMISSION_LOCATION = 2;
 
     private boolean mScanning = false;
     private boolean mConnected = false;
     private Fragment mActiveFragment;
+    private Menu mMenu;
 
-    BluetoothAdapter mBluetoothAdapter;
-    BluetoothDevice mHc05device;
-    UUID mUuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+    private BluetoothAdapter mBluetoothAdapter = null;
+    private BluetoothDevice mHc05device = null;
+    private BluetoothSocket mBluetoothSocket = null;
+    private UUID mUuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
     /* Listens to bluetooth turn on/off */
     BroadcastReceiver mBluetoothStateBroadcastReceiver = new BroadcastReceiver() {
@@ -52,14 +45,16 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
 
             String action = intent.getAction();
-            switch(action) {
-                case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STARTED : {
-                    Log.d(TAG, "You start me up");
-                    break;
-                }
-                case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED : {
-                    Log.d(TAG, "Don't stop me now!");
-                    break;
+            if(action != null) {
+                switch (action) {
+                    case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STARTED: {
+                        Log.d(TAG, "You start me up");
+                        break;
+                    }
+                    case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED: {
+                        Log.d(TAG, "Don't stop me now!");
+                        break;
+                    }
                 }
             }
         }
@@ -70,42 +65,44 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            switch(action) {
-                case BluetoothDevice.ACTION_FOUND : { // Device found
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if(device.getAddress().equals(HC05_MAC_ADDRESS)) {
-                        Log.d(TAG, "Found HC-05!");
-                        mHc05device = device;
-                        connectToHc05();
+            if(action != null) {
+                switch (action) {
+                    case BluetoothDevice.ACTION_FOUND: { // Device found
+                        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        if (device.getAddress().equals(HC05_MAC_ADDRESS)) {
+                            Log.d(TAG, "Found HC-05!");
+                            mHc05device = device;
+                            connectToHc05();
+                        }
+                        break;
                     }
-                    break;
-                }
-                case BluetoothAdapter.ACTION_DISCOVERY_STARTED : { // Scan started
-                    Log.d(TAG, "Scan started");
-                    mScanning = true;
-                    ((ScanFragment) mActiveFragment).startScanning();
-                    break;
-                }
-                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED : { // Scan stopped
-                    Log.d(TAG, "Scan stopped");
-                    mScanning = false;
-                    ((ScanFragment) mActiveFragment).stopScanning();
-                    break;
-                }
-                case BluetoothDevice.ACTION_BOND_STATE_CHANGED : { // A device paired/unpaired
-                    Log.d(TAG, action);
-                    int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
-                    if(bondState == BluetoothDevice.BOND_NONE) {
-                        Log.d(TAG, "NO bond");
+                    case BluetoothAdapter.ACTION_DISCOVERY_STARTED: { // Scan started
+                        Log.d(TAG, "Scan started");
+                        mScanning = true;
+                        ((ScanFragment) mActiveFragment).startScanning();
+                        break;
                     }
-                    if(bondState == BluetoothDevice.BOND_BONDING) {
-                        Log.d(TAG, "BONDING bond");
+                    case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: { // Scan stopped
+                        Log.d(TAG, "Scan stopped");
+                        //TODO hide progressBar, show message
+                        mScanning = false;
+                        break;
                     }
-                    if(bondState == BluetoothDevice.BOND_BONDED) {
-                        Log.d(TAG, "BONDED bond");
-                    }
-                    // TODO connect
+                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { // A device paired/unpaired
+                        Log.d(TAG, action);
+                        int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                        if (bondState == BluetoothDevice.BOND_NONE) {
+                            Log.d(TAG, "NO bond");
+                        }
+                        if (bondState == BluetoothDevice.BOND_BONDING) {
+                            Log.d(TAG, "BONDING bond");
+                        }
+                        if (bondState == BluetoothDevice.BOND_BONDED) {
+                            Log.d(TAG, "BONDED bond");
+                        }
+                        // TODO connect
 
+                    }
                 }
             }
         }
@@ -116,9 +113,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
-        addScanFragment();
 
-        requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, REQUEST_PERMISSION_LOCATION);
+        BluetoothUtils.requestLocationPermission(this);
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null) {
@@ -132,41 +128,38 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
 
-        // Set up a broadcast receiver
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STARTED);
-        intentFilter.addAction(BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED);
-        registerReceiver(mBluetoothStateBroadcastReceiver, intentFilter);
+        BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
+        BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
 
-        // Set up a broadcast receiver
-        intentFilter = new IntentFilter();
-        intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
-        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        registerReceiver(mDeviceFoundReceiver, intentFilter);
+        BluetoothUtils.displayPairedDevices(mBluetoothAdapter);
+    }
 
-        // See list of paired devices
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                if(device.getAddress().equals(HC05_MAC_ADDRESS)) {
-                    //TODO something...
-                }
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-                Log.d(TAG, deviceName);
-                Log.d(TAG, deviceHardwareAddress);
-            }
+        mScanning = mBluetoothAdapter.isDiscovering();
+
+        /* If null:
+         *   - the application is opened for the first time;
+         *   - or no scan has been started;
+         *   - or no device has been located;
+         */
+        if(mConnected) {
+            setFragment(new ControlFragment());
         }
-
+        else {
+            setFragment(new ScanFragment());
+        }
+        if(mMenu != null) {
+            setMenuScan();
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        mMenu = menu;
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -219,24 +212,42 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mDeviceFoundReceiver);
     }
 
-    private void addScanFragment() {
-        mActiveFragment = new ScanFragment();
+    private void setFragment(Fragment fragment) {
+        mActiveFragment = fragment;
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.add(R.id.fragment_container, mActiveFragment, TAG_FRAGMENT);
+        transaction.replace(R.id.fragment_container, mActiveFragment);
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-        transaction.addToBackStack(null);
+        //transaction.addToBackStack(null);
         transaction.commit();
+    }
+
+    private void setMenuScan() {
+        MenuItem item = mMenu.findItem(R.id.label_scan);
+        if(item == null) return;
+
+        if(mConnected) {
+            item.setEnabled(false);
+        }
+        else {
+            item.setEnabled(true);
+        }
     }
 
     private void connectToHc05() {
         mBluetoothAdapter.cancelDiscovery();
         try {
-            BluetoothSocket socket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
-            Log.d(TAG, "connected: " + socket.isConnected());
-            socket.connect();
-            Log.d(TAG, "connected: " + socket.isConnected());
+            mBluetoothSocket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
+
+            // TODO da sledi dali vrazkata ne se e razpadnala!!!!
+            StartConnectionService.startBluetoothConnection(this, mBluetoothSocket);
+
+            //mBluetoothSocket.connect();
+            //TODO get this value from receiver
             mConnected = true;
-            socket.
+
+            setFragment(new ControlFragment());
+            findViewById(R.id.menu_scan).setVisibility(View.GONE);
+            findViewById(R.id.menu_scan).setEnabled(false);
 
         } catch (IOException e) {
             e.printStackTrace();
