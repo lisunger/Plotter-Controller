@@ -10,7 +10,9 @@ import java.io.IOException;
 
 public class StartConnectionService extends IntentService {
 
-    private static final String ACTION_CONNECT = "com.nikolay.plottercontroller.action.CONNECT";
+    private static final String TAG = "Lisko";
+    public static final String ACTION_HC05_CONNECTED = "com.nikolay.plottercontroller.action.CONNECTED";
+    public static final String ACTION_HC05_DISCONNECTED = "com.nikolay.plottercontroller.action.DISCONNECTED";
     private static BluetoothSocket mBluetoothSocket;
 
     public StartConnectionService() {
@@ -23,21 +25,54 @@ public class StartConnectionService extends IntentService {
         context.startService(intent);
     }
 
+    public static boolean isConnected() {
+        if(mBluetoothSocket == null) {
+            return false;
+        } else {
+            return mBluetoothSocket.isConnected();
+        }
+    }
+
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
             connectToHc05();
         }
+        // Do nothing while connection is active
+        while(mBluetoothSocket.isConnected());
+
+        //When connection breaks, send broadcast and turn off
+        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
+        sendBroadcast(broadcast);
+        stopSelf();
     }
 
     private void connectToHc05() {
         try {
             if(mBluetoothSocket != null) {
                 mBluetoothSocket.connect();
+                Log.d(TAG, "Connection successful");
+                // Send broadcast that the connection is established
+                Intent broadcast = new Intent(ACTION_HC05_CONNECTED);
+                sendBroadcast(broadcast);
             }
         } catch (IOException e) {
-            Log.d(MainActivity.TAG, "Connection failed");
+            Log.d(TAG, "Connection failed");
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(mBluetoothSocket != null) {
+            try {
+                mBluetoothSocket.close();
+            } catch (IOException e) {
+                Log.d(TAG, "Cannot close connection");
+                e.printStackTrace();
+            }
+        }
+        Log.d(TAG, "StartConnectionService destroyed");
     }
 }

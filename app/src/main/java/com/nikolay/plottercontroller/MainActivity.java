@@ -85,24 +85,37 @@ public class MainActivity extends AppCompatActivity {
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: { // Scan stopped
                         Log.d(TAG, "Scan stopped");
                         //TODO hide progressBar, show message
+                        //TODO Two cases - search stopped with/without finding the device
                         mScanning = false;
+                        if(mActiveFragment != null && mActiveFragment instanceof ScanFragment) {
+                            ((ScanFragment) mActiveFragment).stopScanning();
+                        }
                         break;
                     }
-                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { // A device paired/unpaired
-                        Log.d(TAG, action);
-                        int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
-                        if (bondState == BluetoothDevice.BOND_NONE) {
-                            Log.d(TAG, "NO bond");
-                        }
-                        if (bondState == BluetoothDevice.BOND_BONDING) {
-                            Log.d(TAG, "BONDING bond");
-                        }
-                        if (bondState == BluetoothDevice.BOND_BONDED) {
-                            Log.d(TAG, "BONDED bond");
-                        }
-                        // TODO connect
+                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { /* A device paired/unpaired */}
+                }
+            }
+        }
+    };
 
-                    }
+    BroadcastReceiver mConnectionStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch(action) {
+                case StartConnectionService.ACTION_HC05_CONNECTED : {
+                    //TODO change fragment
+                    mConnected = true;
+                    setMenu();
+                    setFragment(new ControlFragment());
+                    break;
+                }
+                case StartConnectionService.ACTION_HC05_DISCONNECTED : {
+                    //TODO change fragment
+                    mConnected = false;
+                    setMenu();
+                    setFragment(new ScanFragment());
+                    break;
                 }
             }
         }
@@ -130,21 +143,18 @@ public class MainActivity extends AppCompatActivity {
 
         BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
         BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
+        BluetoothUtils.registerConnectionStateReceiver(this, mConnectionStateReceiver);
 
-        BluetoothUtils.displayPairedDevices(mBluetoothAdapter);
+        // BluetoothUtils.displayPairedDevices(this, mBluetoothAdapter);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        mScanning = mBluetoothAdapter.isDiscovering();
+        mBluetoothAdapter.cancelDiscovery();
 
-        /* If null:
-         *   - the application is opened for the first time;
-         *   - or no scan has been started;
-         *   - or no device has been located;
-         */
+        mConnected = StartConnectionService.isConnected();
         if(mConnected) {
             setFragment(new ControlFragment());
         }
@@ -152,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
             setFragment(new ScanFragment());
         }
         if(mMenu != null) {
-            setMenuScan();
+            setMenu();
         }
     }
 
@@ -171,6 +181,12 @@ public class MainActivity extends AppCompatActivity {
                 if(!mScanning) {
                     mBluetoothAdapter.startDiscovery();
                 }
+                break;
+            }
+            case R.id.menu_disconnect : {
+                Log.d(TAG, "Bluetooth unplugged");
+                //TODO destroy service, change fragment
+
                 break;
             }
         }
@@ -207,9 +223,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "Destroyed");
+        Log.d(TAG, "MainActivity Destroyed");
         unregisterReceiver(mBluetoothStateBroadcastReceiver);
         unregisterReceiver(mDeviceFoundReceiver);
+        unregisterReceiver(mConnectionStateReceiver);
+        stopService(new Intent(this, StartConnectionService.class));
     }
 
     private void setFragment(Fragment fragment) {
@@ -217,19 +235,22 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, mActiveFragment);
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-        //transaction.addToBackStack(null);
         transaction.commit();
     }
 
-    private void setMenuScan() {
-        MenuItem item = mMenu.findItem(R.id.label_scan);
-        if(item == null) return;
+    private void setMenu() {
+        MenuItem itemScan = mMenu.findItem(R.id.menu_scan);
+        MenuItem itemDisconnect = mMenu.findItem(R.id.menu_disconnect);
+
+        if(itemScan == null || itemDisconnect == null) return;
 
         if(mConnected) {
-            item.setEnabled(false);
+            itemScan.setEnabled(false);
+            itemDisconnect.setEnabled(true);
         }
         else {
-            item.setEnabled(true);
+            itemScan.setEnabled(true);
+            itemDisconnect.setEnabled(false);
         }
     }
 
@@ -238,18 +259,13 @@ public class MainActivity extends AppCompatActivity {
         try {
             mBluetoothSocket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
 
-            // TODO da sledi dali vrazkata ne se e razpadnala!!!!
             StartConnectionService.startBluetoothConnection(this, mBluetoothSocket);
 
-            //mBluetoothSocket.connect();
-            //TODO get this value from receiver
-            mConnected = true;
-
-            setFragment(new ControlFragment());
             findViewById(R.id.menu_scan).setVisibility(View.GONE);
             findViewById(R.id.menu_scan).setEnabled(false);
 
         } catch (IOException e) {
+            Log.d(TAG, "Cannot open socket.");
             e.printStackTrace();
             mConnected = false;
         }

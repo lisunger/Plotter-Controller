@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ScanFragment">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
         android:id="@+id/label_scan"
         android:layout_width="wrap_content"
