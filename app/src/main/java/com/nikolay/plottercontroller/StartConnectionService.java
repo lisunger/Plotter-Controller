@@ -73,6 +73,8 @@ public class StartConnectionService extends IntentService {
                 e.printStackTrace();
             }
         }
+        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
+        sendBroadcast(broadcast);
         Log.d(TAG, "StartConnectionService destroyed");
     }
 }

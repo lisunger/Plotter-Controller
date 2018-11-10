@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean mConnected = false;
     private Fragment mActiveFragment;
     private Menu mMenu;
+    private boolean mScanStartedByApp = false;
 
     private BluetoothAdapter mBluetoothAdapter = null;
     private BluetoothDevice mHc05device = null;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
 
             String action = intent.getAction();
-            if(action != null) {
+            if (action != null) {
                 switch (action) {
                     case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STARTED: {
                         Log.d(TAG, "You start me up");
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                     case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED: {
                         Log.d(TAG, "Don't stop me now!");
+                        //TODO da se proveri dali ustroistvoto se disconnect-va i fragmentat se smenia sam
+                        stopService(new Intent(context, StartConnectionService.class));
                         break;
                     }
                 }
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if(action != null) {
+            if (action != null) {
                 switch (action) {
                     case BluetoothDevice.ACTION_FOUND: { // Device found
                         BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
@@ -77,22 +80,33 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     }
                     case BluetoothAdapter.ACTION_DISCOVERY_STARTED: { // Scan started
-                        Log.d(TAG, "Scan started");
-                        mScanning = true;
-                        ((ScanFragment) mActiveFragment).startScanning();
+                        /* I want to connect to the module only if I clicked the icon,
+                         * not when the user turns on the bluetooth (automatic discovery starts)
+                        */
+                        if(mScanStartedByApp) {
+                            Log.d(TAG, "Scan started");
+                            mScanning = true;
+                            ((ScanFragment) mActiveFragment).startScanning();
+                        }
+                        else {
+                            mBluetoothAdapter.cancelDiscovery();
+                        }
                         break;
                     }
                     case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: { // Scan stopped
                         Log.d(TAG, "Scan stopped");
-                        //TODO hide progressBar, show message
-                        //TODO Two cases - search stopped with/without finding the device
+                        /* Two cases - search stopped with/without finding the device
+                            if found, it automatically changes framgent, no need to do anything
+                            if not found - hide progressBar, show message
+                         */
                         mScanning = false;
-                        if(mActiveFragment != null && mActiveFragment instanceof ScanFragment) {
+                        mScanStartedByApp = false;
+                        if (mActiveFragment instanceof ScanFragment) {
                             ((ScanFragment) mActiveFragment).stopScanning();
                         }
                         break;
                     }
-                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { /* A device paired/unpaired */}
+                    case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { /* A device paired/unpaired */ }
                 }
             }
         }
@@ -102,19 +116,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            switch(action) {
-                case StartConnectionService.ACTION_HC05_CONNECTED : {
-                    //TODO change fragment
+            switch (action) {
+                case StartConnectionService.ACTION_HC05_CONNECTED: {
                     mConnected = true;
                     setMenu();
-                    setFragment(new ControlFragment());
+                    setControlFragment();
                     break;
                 }
-                case StartConnectionService.ACTION_HC05_DISCONNECTED : {
-                    //TODO change fragment
+                case StartConnectionService.ACTION_HC05_DISCONNECTED: {
                     mConnected = false;
                     setMenu();
-                    setFragment(new ScanFragment());
+                    setScanFragment();
                     break;
                 }
             }
@@ -130,13 +142,13 @@ public class MainActivity extends AppCompatActivity {
         BluetoothUtils.requestLocationPermission(this);
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mBluetoothAdapter == null) {
+        if (mBluetoothAdapter == null) {
             Log.d(TAG, "Bluetooth not supported");
             Toast.makeText(this, "Bluetooth is not supported on this device", Toast.LENGTH_LONG).show();
             finish();
         }
 
-        if(!mBluetoothAdapter.isEnabled()) {
+        if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBluetoothIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetoothIntent, REQUEST_ENABLE_BT);
         }
@@ -155,13 +167,12 @@ public class MainActivity extends AppCompatActivity {
         mBluetoothAdapter.cancelDiscovery();
 
         mConnected = StartConnectionService.isConnected();
-        if(mConnected) {
-            setFragment(new ControlFragment());
+        if (mConnected) {
+            setControlFragment();
+        } else {
+            setScanFragment();
         }
-        else {
-            setFragment(new ScanFragment());
-        }
-        if(mMenu != null) {
+        if (mMenu != null) {
             setMenu();
         }
     }
@@ -175,18 +186,24 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.menu_scan : {
-                Log.d(TAG, "Should I scan or should I go now?");
-                if(!mScanning) {
-                    mBluetoothAdapter.startDiscovery();
+        switch (item.getItemId()) {
+            case R.id.menu_scan: {
+                if(mBluetoothAdapter.isEnabled()) {
+                    Log.d(TAG, "Should I scan or should I go now?");
+                    if (!mScanning) {
+                        mScanStartedByApp = true;
+                        mBluetoothAdapter.startDiscovery();
+                    }
+                }
+                else {
+                    Toast.makeText(this, "Enable bluetooth before you scan", Toast.LENGTH_SHORT).show();
                 }
                 break;
             }
-            case R.id.menu_disconnect : {
+            case R.id.menu_disconnect: {
                 Log.d(TAG, "Bluetooth unplugged");
                 //TODO destroy service, change fragment
-
+                stopService(new Intent(this, StartConnectionService.class));
                 break;
             }
         }
@@ -196,22 +213,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 
-        switch(requestCode) {
-            case REQUEST_ENABLE_BT : {
-                if(resultCode == RESULT_OK) {
+        switch (requestCode) {
+            case REQUEST_ENABLE_BT: {
+                if (resultCode == RESULT_OK) {
                     Log.d(TAG, "Bluetooth started");
-                }
-                else {
+                } else {
                     Log.d(TAG, "Bluetooth canceled");
                     finish();
                 }
                 break;
             }
-            case REQUEST_PERMISSION_LOCATION : {
-                if(resultCode == RESULT_OK) {
+            case REQUEST_PERMISSION_LOCATION: {
+                if (resultCode == RESULT_OK) {
                     Log.d(TAG, "Permission granted");
-                }
-                else if(resultCode == RESULT_CANCELED) {
+                } else if (resultCode == RESULT_CANCELED) {
                     Log.d(TAG, "Permission refused");
                     finish();
                 }
@@ -223,15 +238,30 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "MainActivity Destroyed");
         unregisterReceiver(mBluetoothStateBroadcastReceiver);
         unregisterReceiver(mDeviceFoundReceiver);
         unregisterReceiver(mConnectionStateReceiver);
         stopService(new Intent(this, StartConnectionService.class));
+        Log.d(TAG, "MainActivity Destroyed");
     }
 
-    private void setFragment(Fragment fragment) {
-        mActiveFragment = fragment;
+    private void setScanFragment() {
+        mActiveFragment = new ScanFragment();
+        changeFragment();
+        if(mMenu != null) {
+            setMenu();
+        }
+    }
+
+    private void setControlFragment() {
+        mActiveFragment = new ControlFragment();
+        changeFragment();
+        if(mMenu != null) {
+            setMenu();
+        }
+    }
+
+    private void changeFragment() {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, mActiveFragment);
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
@@ -242,15 +272,16 @@ public class MainActivity extends AppCompatActivity {
         MenuItem itemScan = mMenu.findItem(R.id.menu_scan);
         MenuItem itemDisconnect = mMenu.findItem(R.id.menu_disconnect);
 
-        if(itemScan == null || itemDisconnect == null) return;
-
-        if(mConnected) {
+        if (mActiveFragment instanceof ControlFragment) {
             itemScan.setEnabled(false);
+            itemScan.setVisible(false);
             itemDisconnect.setEnabled(true);
-        }
-        else {
+            itemDisconnect.setVisible(true);
+        } else if(mActiveFragment instanceof ScanFragment){
             itemScan.setEnabled(true);
+            itemScan.setVisible(true);
             itemDisconnect.setEnabled(false);
+            itemDisconnect.setVisible(false);
         }
     }
 
@@ -258,12 +289,7 @@ public class MainActivity extends AppCompatActivity {
         mBluetoothAdapter.cancelDiscovery();
         try {
             mBluetoothSocket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
-
             StartConnectionService.startBluetoothConnection(this, mBluetoothSocket);
-
-            findViewById(R.id.menu_scan).setVisibility(View.GONE);
-            findViewById(R.id.menu_scan).setEnabled(false);
-
         } catch (IOException e) {
             Log.d(TAG, "Cannot open socket.");
             e.printStackTrace();
