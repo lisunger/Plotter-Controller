@@ -7,6 +7,9 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 public class StartConnectionService extends IntentService {
 
@@ -47,6 +50,22 @@ public class StartConnectionService extends IntentService {
         stopSelf();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(mBluetoothSocket != null) {
+            try {
+                mBluetoothSocket.close();
+            } catch (IOException e) {
+                Log.d(TAG, "Cannot close connection");
+                e.printStackTrace();
+            }
+        }
+        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
+        sendBroadcast(broadcast);
+        Log.d(TAG, "StartConnectionService destroyed");
+    }
+
     private void connectToHc05() {
         try {
             if(mBluetoothSocket != null) {
@@ -62,19 +81,17 @@ public class StartConnectionService extends IntentService {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if(mBluetoothSocket != null) {
-            try {
-                mBluetoothSocket.close();
-            } catch (IOException e) {
-                Log.d(TAG, "Cannot close connection");
-                e.printStackTrace();
-            }
+    public static void writeMessage(String message) {
+        try {
+            // InputStream readStream = mBluetoothSocket.getInputStream();
+            OutputStream writeStream = mBluetoothSocket.getOutputStream();
+            ByteBuffer b = ByteBuffer.allocate(4);
+            b.putInt(4121994);
+            byte[] result = b.array();
+
+            writeStream.write("niki".getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
-        sendBroadcast(broadcast);
-        Log.d(TAG, "StartConnectionService destroyed");
     }
 }

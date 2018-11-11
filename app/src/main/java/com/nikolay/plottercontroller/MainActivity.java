@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -19,6 +21,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
@@ -54,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED: {
                         Log.d(TAG, "Don't stop me now!");
-                        //TODO da se proveri dali ustroistvoto se disconnect-va i fragmentat se smenia sam
                         stopService(new Intent(context, StartConnectionService.class));
                         break;
                     }
@@ -82,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                     case BluetoothAdapter.ACTION_DISCOVERY_STARTED: { // Scan started
                         /* I want to connect to the module only if I clicked the icon,
                          * not when the user turns on the bluetooth (automatic discovery starts)
-                        */
+                         */
                         if(mScanStartedByApp) {
                             Log.d(TAG, "Scan started");
                             mScanning = true;
@@ -125,7 +128,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 case StartConnectionService.ACTION_HC05_DISCONNECTED: {
                     mConnected = false;
-                    setMenu();
                     setScanFragment();
                     break;
                 }
@@ -156,8 +158,6 @@ public class MainActivity extends AppCompatActivity {
         BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
         BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
         BluetoothUtils.registerConnectionStateReceiver(this, mConnectionStateReceiver);
-
-        // BluetoothUtils.displayPairedDevices(this, mBluetoothAdapter);
     }
 
     @Override
@@ -202,7 +202,6 @@ public class MainActivity extends AppCompatActivity {
             }
             case R.id.menu_disconnect: {
                 Log.d(TAG, "Bluetooth unplugged");
-                //TODO destroy service, change fragment
                 stopService(new Intent(this, StartConnectionService.class));
                 break;
             }
