@@ -83,7 +83,7 @@ public class StartConnectionService extends IntentService {
 
     public static void writeMessage(String message) {
         try {
-            // InputStream readStream = mBluetoothSocket.getInputStream();
+            InputStream readStream = mBluetoothSocket.getInputStream();
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
             ByteBuffer b = ByteBuffer.allocate(4);
             b.putInt(4121994);
@@ -91,6 +91,16 @@ public class StartConnectionService extends IntentService {
 
             writeStream.write("niki".getBytes());
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeMessage(int command) {
+        try {
+            OutputStream writeStream = mBluetoothSocket.getOutputStream();
+            writeStream.write(command);
+        } catch (IOException e) {
+            Log.d("Lisko", "Could not send command");
             e.printStackTrace();
         }
     }
