@@ -8,12 +8,12 @@
 
     <Button
         android:id="@+id/buttonLeft"
-        android:layout_width="120dp"
+        style="@style/ControlButtons"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:drawableStart="@drawable/ic_arrow_left_black_48dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="32dp"
-        android:drawableStart="@drawable/ic_rotate_left_black_48dp"
-        android:text="Left"
         app:layout_constraintEnd_toStartOf="@+id/buttonRight"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -21,43 +21,63 @@
 
     <Button
         android:id="@+id/buttonRight"
-        android:layout_width="120dp"
+        style="@style/ControlButtons"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="8dp"
-        android:drawableStart="@drawable/ic_rotate_right_black_48dp"
-        android:text="Right"
+        android:drawableStart="@drawable/ic_arrow_right_black_48dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/buttonLeft"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <ImageView
         android:id="@+id/buttonUp"
-        android:layout_width="120dp"
+        android:background="@drawable/button_square"
+        android:padding="5dp"
+        android:src="@drawable/ic_arrow_up_black_48dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:text="Up"
-        android:drawableStart="@drawable/ic_arrow_up_black_48dp"
         app:layout_constraintBottom_toTopOf="@+id/buttonDown"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.938" />
 
-    <Button
+    <ImageView
         android:id="@+id/buttonDown"
-        android:layout_width="120dp"
+        android:background="@drawable/button_square"
+        android:src="@drawable/ic_arrow_down_black_48dp"
+        android:padding="5dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="260dp"
-        android:text="Down"
-        android:drawableStart="@drawable/ic_arrow_down_black_48dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/buttonDraw"
+        android:background="@drawable/button_square"
+        android:src="@drawable/ic_pen_black_48dp"
+        android:padding="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
 </android.support.constraint.ConstraintLayout>
