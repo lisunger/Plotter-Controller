@@ -81,6 +81,7 @@ public class StartConnectionService extends IntentService {
         }
     }
 
+    /*
     public static void writeMessage(String message) {
         try {
             InputStream readStream = mBluetoothSocket.getInputStream();
@@ -94,6 +95,7 @@ public class StartConnectionService extends IntentService {
             e.printStackTrace();
         }
     }
+    */
 
     public static void writeMessage(int command) {
         try {

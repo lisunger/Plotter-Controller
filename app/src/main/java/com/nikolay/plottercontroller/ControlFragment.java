@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageView;
 
 public class ControlFragment extends Fragment {
 
@@ -18,11 +18,6 @@ public class ControlFragment extends Fragment {
     private static final int COMMAND_RIGHT = 2;
     private static final int COMMAND_UP = 3;
     private static final int COMMAND_DOWN = 4;
-
-    private Button mButtonLeft;
-    private Button mButtonRight;
-    private Button mButtonUp;
-    private Button mButtonDown;
 
     public ControlFragment() {
         // Required empty public constructor
@@ -40,15 +35,14 @@ public class ControlFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        mButtonLeft = getView().findViewById(R.id.buttonLeft);
-        mButtonRight = getView().findViewById(R.id.buttonRight);
-        mButtonUp = getView().findViewById(R.id.buttonUp);
-        mButtonDown = getView().findViewById(R.id.buttonDown);
-
-        mButtonLeft.setOnClickListener(new CommandClickListener(COMMAND_LEFT));
-        mButtonRight.setOnClickListener(new CommandClickListener(COMMAND_RIGHT));
-        mButtonUp.setOnClickListener(new CommandClickListener(COMMAND_UP));
-        mButtonDown.setOnClickListener(new CommandClickListener(COMMAND_DOWN));
+        getView().findViewById(R.id.buttonStepLeft).setOnClickListener(new CommandClickListener(COMMAND_LEFT));
+        getView().findViewById(R.id.buttonStepLeft).setOnTouchListener(new ButtonTouchListener());
+        getView().findViewById(R.id.buttonStepRight).setOnClickListener(new CommandClickListener(COMMAND_RIGHT));
+        getView().findViewById(R.id.buttonStepRight).setOnTouchListener(new ButtonTouchListener());
+        getView().findViewById(R.id.buttonStepUp).setOnClickListener(new CommandClickListener(COMMAND_UP));
+        getView().findViewById(R.id.buttonStepUp).setOnTouchListener(new ButtonTouchListener());
+        getView().findViewById(R.id.buttonStepDown).setOnClickListener(new CommandClickListener(COMMAND_DOWN));
+        getView().findViewById(R.id.buttonStepDown).setOnTouchListener(new ButtonTouchListener());
     }
 
     private class CommandClickListener implements View.OnClickListener {
@@ -62,6 +56,24 @@ public class ControlFragment extends Fragment {
         @Override
         public void onClick(View v) {
             StartConnectionService.writeMessage(this.command);
+        }
+    }
+
+    private class ButtonTouchListener implements View.OnTouchListener {
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                Log.d("Lisko", "DOWN");
+                v.setBackgroundResource(R.drawable.button_square_pressed);
+                return true;
+            }
+            else if(event.getAction() == MotionEvent.ACTION_UP) {
+                Log.d("Lisko", "UP");
+                v.setBackgroundResource(R.drawable.button_square);
+                return false;
+            }
+            return false;
         }
     }
 }

@@ -4,13 +4,15 @@
     <item
         android:id="@+id/menu_scan"
         android:title="@string/menu_scan"
-        android:icon="@drawable/ic_radar_white_48dp"
+        android:icon="@drawable/radar"
         android:orderInCategory="1"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom"
+        android:iconTint="#ffffff"/>
     <item
         android:id="@+id/menu_disconnect"
         android:title="@string/menu_disconnect"
-        android:icon="@drawable/ic_power_plug_off_white_48dp"
+        android:icon="@drawable/power_plug_off"
         android:orderInCategory="2"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom"
+        android:iconTint="#ffffff"/>
 </menu>
