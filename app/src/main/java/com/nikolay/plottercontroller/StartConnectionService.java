@@ -97,12 +97,22 @@ public class StartConnectionService extends IntentService {
     }
     */
 
-    public static void writeMessage(int command) {
+    public static void sendCommand(int command, int value) {
         try {
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
+
+            //int result = (value << 8) | command;
+            //writeStream.write(result);
+            //Log.d("Lisko", Integer.toString(result, 2));
+
             writeStream.write(command);
+            writeStream.write((value >> 0)  & 0b11111111);
+            writeStream.write((value >> 8) & 0b11111111);
+            writeStream.write((value >> 16) & 0b11111111);
+
         } catch (IOException e) {
             Log.d("Lisko", "Could not send command");
+            // TODO scan if connected device is no longer there (powered off)
             e.printStackTrace();
         }
     }
