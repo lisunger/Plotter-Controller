@@ -99,6 +99,8 @@ public class StartConnectionService extends IntentService {
 
     public static void sendCommand(int command, int value) {
         try {
+
+            // TODO rewrite
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
             //int result = (value << 8) | command;
@@ -109,7 +111,7 @@ public class StartConnectionService extends IntentService {
             writeStream.write((value >> 0)  & 0b11111111);
             writeStream.write((value >> 8) & 0b11111111);
             writeStream.write((value >> 16) & 0b11111111);
-
+            Log.d("Lisko", "Value written: " + value);
         } catch (IOException e) {
             Log.d("Lisko", "Could not send command");
             // TODO scan if connected device is no longer there (powered off)

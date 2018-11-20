@@ -102,14 +102,14 @@ public class ControlFragment extends Fragment {
         ((ControlButton) getView().findViewById(R.id.buttonDraw)).setCommand(BluetoothCommands.COMMAND_DOT);
         ((ControlButton) getView().findViewById(R.id.buttonStop)).setCommand(BluetoothCommands.COMMAND_STOP);
 
-        ((ControlButton) getView().findViewById(R.id.buttonStepLeft)).setValue(1);
-        ((ControlButton) getView().findViewById(R.id.buttonStepRight)).setValue(1);
-        ((ControlButton) getView().findViewById(R.id.buttonStepUp)).setValue(1);
-        ((ControlButton) getView().findViewById(R.id.buttonStepDown)).setValue(1);
-        ((ControlButton) getView().findViewById(R.id.buttonRevLeft)).setValue(2048);
-        ((ControlButton) getView().findViewById(R.id.buttonRevRight)).setValue(2048);
-        ((ControlButton) getView().findViewById(R.id.buttonRevUp)).setValue(200);
-        ((ControlButton) getView().findViewById(R.id.buttonRevDown)).setValue(200);
+        ((ControlButton) getView().findViewById(R.id.buttonStepLeft)).setValue(BluetoothCommands.VALUE_LEFT);
+        ((ControlButton) getView().findViewById(R.id.buttonStepRight)).setValue(BluetoothCommands.VALUE_RIGHT);
+        ((ControlButton) getView().findViewById(R.id.buttonStepUp)).setValue(BluetoothCommands.VALUE_UP);
+        ((ControlButton) getView().findViewById(R.id.buttonStepDown)).setValue(BluetoothCommands.VALUE_DOWN);
+        ((ControlButton) getView().findViewById(R.id.buttonRevLeft)).setValue(BluetoothCommands.ROTATION_NEMA);
+        ((ControlButton) getView().findViewById(R.id.buttonRevRight)).setValue(BluetoothCommands.ROTATION_NEMA);
+        ((ControlButton) getView().findViewById(R.id.buttonRevUp)).setValue(BluetoothCommands.ROTATION_BYJ);
+        ((ControlButton) getView().findViewById(R.id.buttonRevDown)).setValue(BluetoothCommands.ROTATION_BYJ);
 
         getView().findViewById(R.id.buttonStepLeft).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStepRight).setOnClickListener(new CommandClickListener());
@@ -142,7 +142,11 @@ public class ControlFragment extends Fragment {
                     try {
                         steps = Integer.parseInt(mEditTextSteps.getText().toString());
                     } catch(NumberFormatException e) {
-                        mEditTextSteps.setError("Set number between 0 and 32767");
+                        mEditTextSteps.setError("Set number between 0 and 65535");
+                        return;
+                    }
+                    if(steps < 0 || steps > 65535) {
+                        mEditTextSteps.setError("Set number between 0 and 65535");
                         return;
                     }
                 }
