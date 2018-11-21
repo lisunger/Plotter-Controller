@@ -24,6 +24,8 @@ public class ControlFragment extends Fragment {
     private EditText mEditTextSteps;
     private CheckBox mCheckboxUseSteps;
     private boolean mUseSteps = false;
+    private int mCommandIndex = 0;
+    private boolean cCommandChannelOpen = true;
 
     private List<ControlFragment> mButtonsList = new ArrayList<>();
 
@@ -123,6 +125,11 @@ public class ControlFragment extends Fragment {
         getView().findViewById(R.id.buttonStop).setOnClickListener(new CommandClickListener());
     }
 
+    private void prepareNewCommand() {
+        mCommandIndex++;
+        cCommandChannelOpen = true;
+    }
+
     private class CommandClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -150,7 +157,12 @@ public class ControlFragment extends Fragment {
                         return;
                     }
                 }
-                StartConnectionService.sendCommand(((ControlButton)v).getCommand(), steps);
+                if(cCommandChannelOpen) {
+                    boolean sent = StartConnectionService.sendCommand(((ControlButton) v).getCommand(), steps, mCommandIndex);
+                    if(!sent) {
+                        prepareNewCommand();
+                    }
+                }
             }
         }
     }

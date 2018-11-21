@@ -14,8 +14,9 @@ import java.nio.ByteBuffer;
 public class StartConnectionService extends IntentService {
 
     private static final String TAG = "Lisko";
-    public static final String ACTION_HC05_CONNECTED = "com.nikolay.plottercontroller.action.CONNECTED";
-    public static final String ACTION_HC05_DISCONNECTED = "com.nikolay.plottercontroller.action.DISCONNECTED";
+    public static final String ACTION_HC05_CONNECTED =      "com.nikolay.plottercontroller.action.CONNECTED";
+    public static final String ACTION_HC05_DISCONNECTED =   "com.nikolay.plottercontroller.action.DISCONNECTED";
+    public static final String ACTION_HC05_RESPONSE =       "com.nikolay.plottercontroller.action.RESPONSE";
     private static BluetoothSocket mBluetoothSocket;
 
     public StartConnectionService() {
@@ -41,13 +42,38 @@ public class StartConnectionService extends IntentService {
         if (intent != null) {
             connectToHc05();
         }
+        InputStream readStream = null;
+        try {
+            readStream = mBluetoothSocket.getInputStream();
+        } catch (IOException e) {
+            Log.d("Lisko", "Could not open input stream");
+            disconnect();
+            e.printStackTrace();
+        }
         // Do nothing while connection is active
-        while(mBluetoothSocket.isConnected());
+        while(mBluetoothSocket.isConnected()) {
+            try {
+                while(readStream.available() < 4) { Thread.sleep(500); }
+                byte[] value = new byte[4];
+                readStream.read(value, 0, 4);
+                Intent broadcast = new Intent(ACTION_HC05_RESPONSE);
+                broadcast.putExtra(ControlFragment., value);
+                sendBroadcast(broadcast);
+
+            } catch (IOException e) {
+                Log.d("Lisko", "Could not open input stream");
+                disconnect();
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Log.d("Lisko", "Bluetooth connection error");
+                disconnect();
+                e.printStackTrace();
+            }
+
+        };
 
         //When connection breaks, send broadcast and turn off
-        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
-        sendBroadcast(broadcast);
-        stopSelf();
+        disconnect();
     }
 
     @Override
@@ -81,41 +107,42 @@ public class StartConnectionService extends IntentService {
         }
     }
 
-    /*
-    public static void writeMessage(String message) {
-        try {
-            InputStream readStream = mBluetoothSocket.getInputStream();
-            OutputStream writeStream = mBluetoothSocket.getOutputStream();
-            ByteBuffer b = ByteBuffer.allocate(4);
-            b.putInt(4121994);
-            byte[] result = b.array();
-
-            writeStream.write("niki".getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void disconnect() {
+        Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
+        sendBroadcast(broadcast);
+        stopSelf();
     }
-    */
 
-    public static void sendCommand(int command, int value) {
+    /**
+     * @return true if the command has been sent, false otherwise
+     */
+    public static boolean sendCommand(int command, int value, int index) {
         try {
 
-            // TODO rewrite
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
-            //int result = (value << 8) | command;
-            //writeStream.write(result);
-            //Log.d("Lisko", Integer.toString(result, 2));
+            // instruction beginning
+            writeStream.write(new byte[] {'n', 'i', 'k', 'i'});
 
-            writeStream.write(command);
-            writeStream.write((value >> 0)  & 0b11111111);
+            // command
+            writeStream.write(Integer.valueOf(command).byteValue());
+
+            //value (first two bytes only)
+            writeStream.write(value  & 0b11111111);
             writeStream.write((value >> 8) & 0b11111111);
-            writeStream.write((value >> 16) & 0b11111111);
-            Log.d("Lisko", "Value written: " + value);
+
+            // index
+            writeStream.write(index  & 0b11111111);
+            writeStream.write((index >> 8) & 0b11111111);
+            writeStream.write((index >> 16) & 0b11111111);
+            writeStream.write((index >> 24) & 0b11111111);
+
+            return true;
         } catch (IOException e) {
             Log.d("Lisko", "Could not send command");
             // TODO scan if connected device is no longer there (powered off)
             e.printStackTrace();
+            return false;
         }
     }
 }
