@@ -43,6 +43,12 @@ public class BluetoothUtils {
         context.registerReceiver(broadcastReceiver, intentFilter);
     }
 
+    public static void registerCommandReadReceiver(Context context, BroadcastReceiver broadcastReceiver) {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(StartConnectionService.ACTION_HC05_RESPONSE);
+        context.registerReceiver(broadcastReceiver, intentFilter);
+    }
+
     public static void displayPairedDevices(Context context, BluetoothAdapter bluetoothAdapter) {
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 

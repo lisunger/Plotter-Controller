@@ -56,8 +56,20 @@ public class StartConnectionService extends IntentService {
                 while(readStream.available() < 4) { Thread.sleep(500); }
                 byte[] value = new byte[4];
                 readStream.read(value, 0, 4);
+
+                int instructionIndex = 0;
+                instructionIndex |= (value[0] & 0xff) << 24;
+                instructionIndex |= (value[1] & 0xff) << 16;
+                instructionIndex |= (value[2] & 0xff) << 8;
+                instructionIndex |=  value[3] & 0xff;
+                Log.d("Lisko", "Got 4 bytes: " +
+                        String.format("%8s", Integer.toBinaryString(value[0] & 0xFF)).replace(' ', '0') + " " +
+                        String.format("%8s", Integer.toBinaryString(value[1] & 0xFF)).replace(' ', '0') + " " +
+                        String.format("%8s", Integer.toBinaryString(value[2] & 0xFF)).replace(' ', '0') + " " +
+                        String.format("%8s", Integer.toBinaryString(value[3] & 0xFF)).replace(' ', '0') + " " +
+                        instructionIndex);
                 Intent broadcast = new Intent(ACTION_HC05_RESPONSE);
-                broadcast.putExtra(ControlFragment., value);
+                broadcast.putExtra(ControlFragment.EXTRA_INSTRUCTION_INDEX, instructionIndex);
                 sendBroadcast(broadcast);
 
             } catch (IOException e) {
@@ -116,7 +128,7 @@ public class StartConnectionService extends IntentService {
     /**
      * @return true if the command has been sent, false otherwise
      */
-    public static boolean sendCommand(int command, int value, int index) {
+    public static boolean sendInstruction(int command, int value, int instructionIndex) {
         try {
 
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
@@ -128,14 +140,14 @@ public class StartConnectionService extends IntentService {
             writeStream.write(Integer.valueOf(command).byteValue());
 
             //value (first two bytes only)
-            writeStream.write(value  & 0b11111111);
             writeStream.write((value >> 8) & 0b11111111);
+            writeStream.write(value  & 0b11111111);
 
             // index
-            writeStream.write(index  & 0b11111111);
-            writeStream.write((index >> 8) & 0b11111111);
-            writeStream.write((index >> 16) & 0b11111111);
-            writeStream.write((index >> 24) & 0b11111111);
+            writeStream.write((instructionIndex >> 24) & 0b11111111);
+            writeStream.write((instructionIndex >> 16) & 0b11111111);
+            writeStream.write((instructionIndex >> 8) & 0b11111111);
+            writeStream.write(instructionIndex  & 0b11111111);
 
             return true;
         } catch (IOException e) {

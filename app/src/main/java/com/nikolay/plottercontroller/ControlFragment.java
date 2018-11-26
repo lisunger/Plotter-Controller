@@ -1,6 +1,9 @@
 package com.nikolay.plottercontroller;
 
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,26 +21,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ControlFragment extends Fragment {
+    public static final String EXTRA_INSTRUCTION_INDEX = "instructionIndex";
 
     private Button mButton200;
     private Button mButton2048;
     private EditText mEditTextSteps;
     private CheckBox mCheckboxUseSteps;
     private boolean mUseSteps = false;
-    private int mCommandIndex = 0;
-    private boolean cCommandChannelOpen = true;
+    private int mInstructionIndex = 941204;
+    private boolean mCommandChannelOpen = true;
 
-    private List<ControlFragment> mButtonsList = new ArrayList<>();
+    private BroadcastReceiver mCommandReadReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("Lisko", "Vuui 4uek polu4ih ne6to!");
+            int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
+            if(index == mInstructionIndex) { //command has been executed
+                prepareNewCommand();
+            }
+            else {
+                // TODO command not executed correctly?
+            }
+        }
+    };
 
     public ControlFragment() {
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_control, container, false);
     }
 
@@ -46,7 +60,14 @@ public class ControlFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         initUi();
-        setCommands();
+        setListeners();
+        BluetoothUtils.registerCommandReadReceiver(getContext(), mCommandReadReceiver);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        getContext().unregisterReceiver(mCommandReadReceiver);
     }
 
     private void initUi() {
@@ -92,27 +113,7 @@ public class ControlFragment extends Fragment {
         mEditTextSteps.setEnabled(enabled);
     }
 
-    private void setCommands() {
-        ((ControlButton) getView().findViewById(R.id.buttonStepLeft)).setCommand(BluetoothCommands.COMMAND_LEFT);
-        ((ControlButton) getView().findViewById(R.id.buttonStepRight)).setCommand(BluetoothCommands.COMMAND_RIGHT);
-        ((ControlButton) getView().findViewById(R.id.buttonStepUp)).setCommand(BluetoothCommands.COMMAND_UP);
-        ((ControlButton) getView().findViewById(R.id.buttonStepDown)).setCommand(BluetoothCommands.COMMAND_DOWN);
-        ((ControlButton) getView().findViewById(R.id.buttonRevLeft)).setCommand(BluetoothCommands.COMMAND_LEFT);
-        ((ControlButton) getView().findViewById(R.id.buttonRevRight)).setCommand(BluetoothCommands.COMMAND_RIGHT);
-        ((ControlButton) getView().findViewById(R.id.buttonRevUp)).setCommand(BluetoothCommands.COMMAND_UP);
-        ((ControlButton) getView().findViewById(R.id.buttonRevDown)).setCommand(BluetoothCommands.COMMAND_DOWN);
-        ((ControlButton) getView().findViewById(R.id.buttonDraw)).setCommand(BluetoothCommands.COMMAND_DOT);
-        ((ControlButton) getView().findViewById(R.id.buttonStop)).setCommand(BluetoothCommands.COMMAND_STOP);
-
-        ((ControlButton) getView().findViewById(R.id.buttonStepLeft)).setValue(BluetoothCommands.VALUE_LEFT);
-        ((ControlButton) getView().findViewById(R.id.buttonStepRight)).setValue(BluetoothCommands.VALUE_RIGHT);
-        ((ControlButton) getView().findViewById(R.id.buttonStepUp)).setValue(BluetoothCommands.VALUE_UP);
-        ((ControlButton) getView().findViewById(R.id.buttonStepDown)).setValue(BluetoothCommands.VALUE_DOWN);
-        ((ControlButton) getView().findViewById(R.id.buttonRevLeft)).setValue(BluetoothCommands.ROTATION_NEMA);
-        ((ControlButton) getView().findViewById(R.id.buttonRevRight)).setValue(BluetoothCommands.ROTATION_NEMA);
-        ((ControlButton) getView().findViewById(R.id.buttonRevUp)).setValue(BluetoothCommands.ROTATION_BYJ);
-        ((ControlButton) getView().findViewById(R.id.buttonRevDown)).setValue(BluetoothCommands.ROTATION_BYJ);
-
+    private void setListeners() {
         getView().findViewById(R.id.buttonStepLeft).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStepRight).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStepUp).setOnClickListener(new CommandClickListener());
@@ -126,42 +127,38 @@ public class ControlFragment extends Fragment {
     }
 
     private void prepareNewCommand() {
-        mCommandIndex++;
-        cCommandChannelOpen = true;
+        mInstructionIndex++;
+        mCommandChannelOpen = true;
     }
 
     private class CommandClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            Log.d("Lisko", ((ControlButton)v).getCommand() + "");
-            if(((ControlButton)v).getCommand() == -1) {
-                Toast.makeText(getContext(), "No command set for this button", Toast.LENGTH_SHORT).show();
-            }
-            else {
-                int steps = ((ControlButton) v).getValue();
-                if(mUseSteps) {
+            if(mCommandChannelOpen) {
+                int steps = -1;
+                if (mUseSteps) {
 
-                    if(mEditTextSteps.getText() == null || mEditTextSteps.getText().toString().trim().equals("")) {
-                        mEditTextSteps.setError("Set number between 0 and 16 777 215");
+                    if (mEditTextSteps.getText() == null || mEditTextSteps.getText().toString().trim().equals("")) {
+                        mEditTextSteps.setError("Set number between 0 and 32767");
                         return;
                     }
 
                     try {
                         steps = Integer.parseInt(mEditTextSteps.getText().toString());
-                    } catch(NumberFormatException e) {
-                        mEditTextSteps.setError("Set number between 0 and 65535");
+                    } catch (NumberFormatException e) {
+                        mEditTextSteps.setError("Set number between 0 and 35767");
                         return;
                     }
-                    if(steps < 0 || steps > 65535) {
-                        mEditTextSteps.setError("Set number between 0 and 65535");
+                    if (steps < 0 || steps > 32767) {
+                        mEditTextSteps.setError("Set number between 0 and 32767");
                         return;
                     }
                 }
-                if(cCommandChannelOpen) {
-                    boolean sent = StartConnectionService.sendCommand(((ControlButton) v).getCommand(), steps, mCommandIndex);
-                    if(!sent) {
-                        prepareNewCommand();
-                    }
+
+                mCommandChannelOpen = false;
+                boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
+                if(!sent) {
+                    prepareNewCommand();
                 }
             }
         }
