@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -27,9 +28,12 @@ public class ControlFragment extends Fragment {
     private Button mButton2048;
     private EditText mEditTextSteps;
     private CheckBox mCheckboxUseSteps;
+    private TextView mTextView;
     private boolean mUseSteps = false;
     private int mInstructionIndex = 941204;
     private boolean mCommandChannelOpen = true;
+    private boolean mIsRecording = false;
+    private List<Instruction> mRecordedInstructions = new ArrayList<Instruction>();
 
     private BroadcastReceiver mCommandReadReceiver = new BroadcastReceiver() {
         @Override
@@ -75,6 +79,7 @@ public class ControlFragment extends Fragment {
         mButton2048 = getView().findViewById(R.id.button2048);
         mEditTextSteps = getView().findViewById(R.id.editTextSteps);
         mCheckboxUseSteps = getView().findViewById(R.id.checkBoxUseSteps);
+        mTextView = getView().findViewById(R.id.textViewLog);
 
         toggleInput(false);
 
@@ -124,6 +129,31 @@ public class ControlFragment extends Fragment {
         getView().findViewById(R.id.buttonRevDown).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonDraw).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStop).setOnClickListener(new CommandClickListener());
+        getView().findViewById(R.id.buttonRecord).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mIsRecording) {
+                    mIsRecording = false;
+                    v.setBackgroundResource(R.drawable.button_square);
+                    ((ControlButton)v).setImageResource(R.drawable.record);
+                }
+                else {
+                    mIsRecording = true;
+                    mRecordedInstructions.clear();
+                    v.setBackgroundResource(R.drawable.button_square_red);
+                    ((ControlButton)v).setImageResource(R.drawable.stop);
+                }
+            }
+        });
+        getView().findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO
+                for(Instruction i : mRecordedInstructions) {
+
+                }
+            }
+        });
     }
 
     private void prepareNewCommand() {
@@ -155,10 +185,16 @@ public class ControlFragment extends Fragment {
                     }
                 }
 
-                mCommandChannelOpen = false;
-                boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
-                if(!sent) {
-                    prepareNewCommand();
+                if(mIsRecording) {
+                    mRecordedInstructions.add(new Instruction(v.getId(), steps, mInstructionIndex));
+                    mInstructionIndex++;
+                }
+                else {
+                    mCommandChannelOpen = false;
+                    boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
+                    if (!sent) {
+                        prepareNewCommand();
+                    }
                 }
             }
         }

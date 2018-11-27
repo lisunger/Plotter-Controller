@@ -13,134 +13,131 @@
         android:layout_height="@dimen/buttons_size"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_left"
-        app:layout_constraintBottom_toTopOf="@+id/button2048"
-        app:layout_constraintEnd_toStartOf="@+id/buttonRevLeft"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonStepUp" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonRevLeft"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_double_left"
-        app:layout_constraintBottom_toBottomOf="@+id/buttonStepLeft"
-        app:layout_constraintEnd_toStartOf="@+id/buttonDraw"
-        app:layout_constraintTop_toTopOf="@+id/buttonStepLeft" />
+        app:layout_constraintEnd_toStartOf="@+id/buttonRevUp"
+        app:layout_constraintTop_toBottomOf="@+id/buttonRevUp" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonStepRight"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_right"
-        app:layout_constraintBottom_toBottomOf="@+id/buttonRevRight"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/buttonRevRight"
-        app:layout_constraintTop_toTopOf="@+id/buttonRevRight" />
+        app:layout_constraintStart_toEndOf="@+id/buttonDraw"
+        app:layout_constraintTop_toBottomOf="@+id/buttonStepUp" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonRevRight"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
-        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_double_right"
-        app:layout_constraintBottom_toBottomOf="@+id/buttonDraw"
-        app:layout_constraintStart_toEndOf="@+id/buttonDraw"
-        app:layout_constraintTop_toTopOf="@+id/buttonDraw" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonRevUp" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonStepUp"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_up"
-        app:layout_constraintBottom_toTopOf="@+id/buttonRevUp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintStart_toEndOf="@+id/buttonStepLeft"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonRevUp"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
-        android:layout_marginBottom="8dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="4dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_double_up"
-        app:layout_constraintBottom_toTopOf="@+id/buttonDraw"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/buttonRevRight"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonStepDown"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_down"
-        app:layout_constraintBottom_toTopOf="@+id/button2048"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonRevDown"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toEndOf="@+id/buttonStepLeft"
+        app:layout_constraintTop_toBottomOf="@+id/buttonDraw" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonRevDown"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/chevron_double_down"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonDraw" />
+        app:layout_constraintEnd_toStartOf="@+id/buttonRevRight"
+        app:layout_constraintStart_toEndOf="@+id/buttonRevLeft"
+        app:layout_constraintTop_toBottomOf="@+id/buttonRevLeft" />
 
     <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonDraw"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/pen"
-        app:layout_constraintBottom_toBottomOf="@+id/buttonRevLeft"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/buttonRevLeft"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintStart_toEndOf="@+id/buttonStepLeft"
+        app:layout_constraintTop_toBottomOf="@+id/buttonStepUp" />
 
     <com.nikolay.plottercontroller.ControlButton
-        android:id="@+id/buttonStop"
+        android:id="@+id/buttonRecord"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/button_square"
         android:padding="5dp"
-        android:src="@drawable/block_helper"
+        android:src="@drawable/play"
+        app:layout_constraintBottom_toTopOf="@+id/checkBoxUseSteps"
+        app:layout_constraintEnd_toStartOf="@+id/buttonPlay" />
+
+    <com.nikolay.plottercontroller.ControlButton
+        android:id="@+id/buttonPlay"
+        android:layout_width="@dimen/buttons_size"
+        android:layout_height="@dimen/buttons_size"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/button_square"
+        android:padding="5dp"
+        android:src="@drawable/record"
         app:layout_constraintBottom_toTopOf="@+id/checkBoxUseSteps"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -187,5 +184,18 @@
         android:text="2048"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewLog"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_max="300dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonStepDown" />
 
 </android.support.constraint.ConstraintLayout>
