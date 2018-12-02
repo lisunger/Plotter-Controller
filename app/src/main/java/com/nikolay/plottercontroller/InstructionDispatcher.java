@@ -2,6 +2,9 @@ package com.nikolay.plottercontroller;
 
 import android.util.Log;
 
+import com.nikolay.plottercontroller.bluetooth.BluetoothCommands;
+import com.nikolay.plottercontroller.services.StartConnectionService;
+
 public class InstructionDispatcher {
 
     /**
@@ -43,9 +46,9 @@ public class InstructionDispatcher {
             case R.id.buttonDraw : {
                 return BluetoothCommands.COMMAND_DOT;
             }
-            case R.id.buttonStop : {
-                return BluetoothCommands.COMMAND_STOP;
-            }
+//            case R.id.buttonStop : {
+//                return BluetoothCommands.COMMAND_STOP;
+//            }
             default : {
                 return -1;
             }
@@ -81,9 +84,9 @@ public class InstructionDispatcher {
             case R.id.buttonDraw : {
                 return 0;
             }
-            case R.id.buttonStop : {
-                return 0;
-            }
+//            case R.id.buttonStop : {
+//                return 0;
+//            }
             default : {
                 return 0;
             }

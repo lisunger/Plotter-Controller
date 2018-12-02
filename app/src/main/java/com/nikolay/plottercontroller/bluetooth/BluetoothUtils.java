@@ -1,4 +1,4 @@
-package com.nikolay.plottercontroller;
+package com.nikolay.plottercontroller.bluetooth;
 
 import android.Manifest;
 import android.app.Activity;
@@ -8,6 +8,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
+
+import com.nikolay.plottercontroller.activities.MainActivity;
+import com.nikolay.plottercontroller.services.ExecuteSequenceService;
+import com.nikolay.plottercontroller.services.StartConnectionService;
 
 import java.util.Set;
 
@@ -46,6 +50,8 @@ public class BluetoothUtils {
     public static void registerCommandReadReceiver(Context context, BroadcastReceiver broadcastReceiver) {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(StartConnectionService.ACTION_HC05_RESPONSE);
+        intentFilter.addAction(ExecuteSequenceService.ACTION_SEQUENCE_STARTED);
+        intentFilter.addAction(ExecuteSequenceService.ACTION_SEQUENCE_FINISHED);
         context.registerReceiver(broadcastReceiver, intentFilter);
     }
 

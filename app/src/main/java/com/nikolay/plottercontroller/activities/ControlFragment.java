@@ -1,4 +1,4 @@
-package com.nikolay.plottercontroller;
+package com.nikolay.plottercontroller.activities;
 
 
 import android.content.BroadcastReceiver;
@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +15,16 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.nikolay.plottercontroller.ControlButton;
+import com.nikolay.plottercontroller.Instruction;
+import com.nikolay.plottercontroller.InstructionDispatcher;
+import com.nikolay.plottercontroller.R;
+import com.nikolay.plottercontroller.Sequence;
+import com.nikolay.plottercontroller.SequenceBuilder;
+import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
+import com.nikolay.plottercontroller.services.ExecuteSequenceService;
+import com.nikolay.plottercontroller.services.StartConnectionService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,21 +39,43 @@ public class ControlFragment extends Fragment {
     private TextView mTextView;
     private boolean mUseSteps = false;
     private int mInstructionIndex = 941204;
-    private boolean mCommandChannelOpen = true;
+    //private boolean mCommandChannelOpen = true;
     private boolean mIsRecording = false;
     private List<Instruction> mRecordedInstructions = new ArrayList<Instruction>();
+    private boolean mIsExecuting = false;
 
     private BroadcastReceiver mCommandReadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("Lisko", "Vuui 4uek polu4ih ne6to!");
-            int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
-            if(index == mInstructionIndex) { //command has been executed
-                prepareNewCommand();
+            String action = intent.getAction();
+            switch (action) {
+                case StartConnectionService.ACTION_HC05_RESPONSE: {
+                    int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
+                    if (index == mInstructionIndex) { //command has been executed
+                        prepareNewCommand();
+                    } else {
+                        // TODO command not executed correctly?
+                    }
+                    break;
+                }
+                case ExecuteSequenceService.ACTION_SEQUENCE_STARTED: {
+                    mIsExecuting = true;
+                    break;
+                }
+                case ExecuteSequenceService.ACTION_SEQUENCE_FINISHED: {
+                    mIsExecuting = false;
+                    break;
+                }
+//                case ExecuteSequenceService.ACTION_COMMAND_STARTED: {
+//                    mIsExecuting = true;
+//                    break;
+//                }
+//                case ExecuteSequenceService.ACTION_COMMAND_FINISHED: {
+//                    mIsExecuting = false;
+//                    break;
+//                }
             }
-            else {
-                // TODO command not executed correctly?
-            }
+
         }
     };
 
@@ -88,10 +118,9 @@ public class ControlFragment extends Fragment {
             public void onClick(View v) {
                 mUseSteps = mCheckboxUseSteps.isChecked();
 
-                if(mUseSteps) {
+                if (mUseSteps) {
                     toggleInput(true);
-                }
-                else {
+                } else {
                     toggleInput(false);
                 }
             }
@@ -128,20 +157,19 @@ public class ControlFragment extends Fragment {
         getView().findViewById(R.id.buttonRevUp).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonRevDown).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonDraw).setOnClickListener(new CommandClickListener());
-        getView().findViewById(R.id.buttonStop).setOnClickListener(new CommandClickListener());
+        //getView().findViewById(R.id.buttonStop).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonRecord).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mIsRecording) {
+                if (mIsRecording) {
                     mIsRecording = false;
                     v.setBackgroundResource(R.drawable.button_square);
-                    ((ControlButton)v).setImageResource(R.drawable.record);
-                }
-                else {
+                    ((ControlButton) v).setImageResource(R.drawable.record);
+                } else {
                     mIsRecording = true;
                     mRecordedInstructions.clear();
                     v.setBackgroundResource(R.drawable.button_square_red);
-                    ((ControlButton)v).setImageResource(R.drawable.stop);
+                    ((ControlButton) v).setImageResource(R.drawable.stop);
                 }
             }
         });
@@ -149,8 +177,20 @@ public class ControlFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 // TODO
-                for(Instruction i : mRecordedInstructions) {
+                for (Instruction i : mRecordedInstructions) {
 
+                }
+            }
+        });
+        getView().findViewById(R.id.buttonSequence).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // List<Instruction> sequence = SequenceBuilder.buildSquare(50, mInstructionIndex);
+                Sequence sequence = SequenceBuilder.buildCheckerboard(9, mInstructionIndex);
+                if (!mIsExecuting) {
+                    // mIsExecuting = true;
+                    //executeSequence(sequence);
+                    ExecuteSequenceService.executeSequence(getContext(), sequence);
                 }
             }
         });
@@ -158,45 +198,73 @@ public class ControlFragment extends Fragment {
 
     private void prepareNewCommand() {
         mInstructionIndex++;
-        mCommandChannelOpen = true;
+        ExecuteSequenceService.setCommandChannelOpen(true);
+    }
+
+    private void executeSequence(final List<Instruction> sequence) {
+
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+                int sleep = 20;
+                for (Instruction i : sequence) {
+                    while (!ExecuteSequenceService.isCommandChannelOpen()) {
+                        try {
+                            Thread.sleep(sleep);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    ExecuteSequenceService.setCommandChannelOpen(false);
+                    InstructionDispatcher.sendInstruction(i.getButtonId(), i.getSteps(), i.getInstructionIndex());
+                }
+
+                mIsExecuting = false;
+            }
+        });
+
+        t.start();
     }
 
     private class CommandClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            if(mCommandChannelOpen) {
-                int steps = -1;
-                if (mUseSteps) {
+            if (mIsExecuting || !ExecuteSequenceService.isCommandChannelOpen()) {
+                return;
+            }
 
-                    if (mEditTextSteps.getText() == null || mEditTextSteps.getText().toString().trim().equals("")) {
-                        mEditTextSteps.setError("Set number between 0 and 32767");
-                        return;
-                    }
+            int steps = -1;
+            if (mUseSteps) {
 
-                    try {
-                        steps = Integer.parseInt(mEditTextSteps.getText().toString());
-                    } catch (NumberFormatException e) {
-                        mEditTextSteps.setError("Set number between 0 and 35767");
-                        return;
-                    }
-                    if (steps < 0 || steps > 32767) {
-                        mEditTextSteps.setError("Set number between 0 and 32767");
-                        return;
-                    }
+                if (mEditTextSteps.getText() == null || mEditTextSteps.getText().toString().trim().equals("")) {
+                    mEditTextSteps.setError("Set number between 0 and 32767");
+                    return;
                 }
 
-                if(mIsRecording) {
-                    mRecordedInstructions.add(new Instruction(v.getId(), steps, mInstructionIndex));
-                    mInstructionIndex++;
+                try {
+                    steps = Integer.parseInt(mEditTextSteps.getText().toString());
+                } catch (NumberFormatException e) {
+                    mEditTextSteps.setError("Set number between 0 and 35767");
+                    return;
                 }
-                else {
-                    mCommandChannelOpen = false;
-                    boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
-                    if (!sent) {
-                        prepareNewCommand();
-                    }
+                if (steps < 0 || steps > 32767) {
+                    mEditTextSteps.setError("Set number between 0 and 32767");
+                    return;
                 }
             }
+
+            if (mIsRecording) {
+                mRecordedInstructions.add(new Instruction(v.getId(), steps, mInstructionIndex));
+                mInstructionIndex++;
+            } else {
+                ExecuteSequenceService.setCommandChannelOpen(false);
+                boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
+                if (!sent) { // sending instruction failed
+                    prepareNewCommand();
+                }
+            }
+
         }
     }
 

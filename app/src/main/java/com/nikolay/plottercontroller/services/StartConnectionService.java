@@ -1,4 +1,4 @@
-package com.nikolay.plottercontroller;
+package com.nikolay.plottercontroller.services;
 
 import android.app.IntentService;
 import android.bluetooth.BluetoothSocket;
@@ -6,10 +6,11 @@ import android.content.Intent;
 import android.content.Context;
 import android.util.Log;
 
+import com.nikolay.plottercontroller.activities.ControlFragment;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
 public class StartConnectionService extends IntentService {
 
@@ -130,7 +131,7 @@ public class StartConnectionService extends IntentService {
      */
     public static boolean sendInstruction(int command, int value, int instructionIndex) {
         try {
-
+            Log.d("Lisko", ">> " + command + ", " + value + ", " + instructionIndex);
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
             // instruction beginning

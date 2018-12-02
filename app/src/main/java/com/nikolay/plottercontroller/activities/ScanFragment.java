@@ -1,4 +1,4 @@
-package com.nikolay.plottercontroller;
+package com.nikolay.plottercontroller.activities;
 
 
 import android.os.Bundle;
@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.nikolay.plottercontroller.R;
 
 import java.util.Scanner;
 

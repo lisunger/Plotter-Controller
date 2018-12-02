@@ -1,4 +1,4 @@
-package com.nikolay.plottercontroller;
+package com.nikolay.plottercontroller.bluetooth;
 
 public class BluetoothCommands {
     public static final int COMMAND_UP =    1;
@@ -8,8 +8,8 @@ public class BluetoothCommands {
     public static final int COMMAND_DOT =   5;
     public static final int COMMAND_STOP =  6;
 
-    public static final int VALUE_UP =      35; // 1 degree rotation is 5.68 steps
-    public static final int VALUE_DOWN =    35; // 1 degree rotation is 5.68 steps
+    public static final int VALUE_UP =      37; // 1 degree rotation is 5.68 steps
+    public static final int VALUE_DOWN =    37; // 1 degree rotation is 5.68 steps
     public static final int VALUE_LEFT =    3;
     public static final int VALUE_RIGHT =   3;
 
