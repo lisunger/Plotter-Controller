@@ -20,6 +20,7 @@ import android.widget.Toast;
 import com.nikolay.plottercontroller.R;
 import com.nikolay.plottercontroller.bluetooth.BluetoothStateChangeReceiver;
 import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
+import com.nikolay.plottercontroller.services.ExecuteSequenceService;
 import com.nikolay.plottercontroller.services.StartConnectionService;
 
 import java.io.IOException;
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                     mConnected = true;
                     setMenu();
                     setControlFragment();
+                    ExecuteSequenceService.setCommandChannelOpen(true);
                     break;
                 }
                 case StartConnectionService.ACTION_HC05_DISCONNECTED: {

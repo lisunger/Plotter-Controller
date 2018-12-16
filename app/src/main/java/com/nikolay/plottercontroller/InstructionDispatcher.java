@@ -18,14 +18,14 @@ public class InstructionDispatcher {
         if(value == -1) {
             value = getValue(buttonId);
         }
-        Log.d("Lisko", value + "");
-        Log.d("Lisko", command + "");
-        Log.d("Lisko", instructionIndex + "");
+        //Log.d("Lisko", value + "");
+        //Log.d("Lisko", command + "");
+        //Log.d("Lisko", instructionIndex + "");
 
         return StartConnectionService.sendInstruction(command, value, instructionIndex);
     }
 
-    private static int getCommand(int buttonId) {
+    public static int getCommand(int buttonId) {
         switch(buttonId) {
             case R.id.buttonStepDown :
             case R.id.buttonRevDown : {

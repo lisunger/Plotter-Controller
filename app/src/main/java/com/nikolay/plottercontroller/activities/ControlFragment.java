@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import com.nikolay.plottercontroller.InstructionDispatcher;
 import com.nikolay.plottercontroller.R;
 import com.nikolay.plottercontroller.Sequence;
 import com.nikolay.plottercontroller.SequenceBuilder;
+import com.nikolay.plottercontroller.bitmap.Dither;
 import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
 import com.nikolay.plottercontroller.services.ExecuteSequenceService;
 import com.nikolay.plottercontroller.services.StartConnectionService;
@@ -185,12 +187,10 @@ public class ControlFragment extends Fragment {
         getView().findViewById(R.id.buttonSequence).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // List<Instruction> sequence = SequenceBuilder.buildSquare(50, mInstructionIndex);
-                Sequence sequence = SequenceBuilder.buildCheckerboard(9, mInstructionIndex);
+                Sequence sequence = Dither.getSequenceFromImage(getContext(), 123, mInstructionIndex);
                 if (!mIsExecuting) {
-                    // mIsExecuting = true;
-                    //executeSequence(sequence);
-                    ExecuteSequenceService.executeSequence(getContext(), sequence);
+                    //ExecuteSequenceService.executeSequence(getContext(), sequence);
+                    ExecuteSequenceService.executeSequence(getContext(), R.drawable.fox, mInstructionIndex);
                 }
             }
         });
@@ -245,7 +245,7 @@ public class ControlFragment extends Fragment {
                 try {
                     steps = Integer.parseInt(mEditTextSteps.getText().toString());
                 } catch (NumberFormatException e) {
-                    mEditTextSteps.setError("Set number between 0 and 35767");
+                    mEditTextSteps.setError("Set number between 0 and 32767");
                     return;
                 }
                 if (steps < 0 || steps > 32767) {

@@ -63,12 +63,12 @@ public class StartConnectionService extends IntentService {
                 instructionIndex |= (value[1] & 0xff) << 16;
                 instructionIndex |= (value[2] & 0xff) << 8;
                 instructionIndex |=  value[3] & 0xff;
-                Log.d("Lisko", "Got 4 bytes: " +
-                        String.format("%8s", Integer.toBinaryString(value[0] & 0xFF)).replace(' ', '0') + " " +
-                        String.format("%8s", Integer.toBinaryString(value[1] & 0xFF)).replace(' ', '0') + " " +
-                        String.format("%8s", Integer.toBinaryString(value[2] & 0xFF)).replace(' ', '0') + " " +
-                        String.format("%8s", Integer.toBinaryString(value[3] & 0xFF)).replace(' ', '0') + " " +
-                        instructionIndex);
+//                Log.d("Lisko", "Got 4 bytes: " +
+//                        String.format("%8s", Integer.toBinaryString(value[0] & 0xFF)).replace(' ', '0') + " " +
+//                        String.format("%8s", Integer.toBinaryString(value[1] & 0xFF)).replace(' ', '0') + " " +
+//                        String.format("%8s", Integer.toBinaryString(value[2] & 0xFF)).replace(' ', '0') + " " +
+//                        String.format("%8s", Integer.toBinaryString(value[3] & 0xFF)).replace(' ', '0') + " " +
+//                        instructionIndex);
                 Intent broadcast = new Intent(ACTION_HC05_RESPONSE);
                 broadcast.putExtra(ControlFragment.EXTRA_INSTRUCTION_INDEX, instructionIndex);
                 sendBroadcast(broadcast);
@@ -131,7 +131,7 @@ public class StartConnectionService extends IntentService {
      */
     public static boolean sendInstruction(int command, int value, int instructionIndex) {
         try {
-            Log.d("Lisko", ">> " + command + ", " + value + ", " + instructionIndex);
+            //Log.d("Lisko", String.format(">> %d\t%d\t%d", command, value, instructionIndex));
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
             // instruction beginning

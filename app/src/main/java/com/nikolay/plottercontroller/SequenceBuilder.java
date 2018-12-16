@@ -11,20 +11,20 @@ public class SequenceBuilder {
         List<Instruction> sequence = new ArrayList<Instruction>();
 
         for(int i = 0; i < (size - 1); i++) {
-            sequence.add(new Instruction(R.id.buttonDraw, -1, commandIndex++));
-            sequence.add(new Instruction(R.id.buttonStepRight, BluetoothCommands.VALUE_RIGHT, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonDraw), -1, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonStepRight), BluetoothCommands.VALUE_RIGHT, commandIndex++));
         }
         for(int i = 0; i < (size - 1); i++) {
-            sequence.add(new Instruction(R.id.buttonDraw, -1, commandIndex++));
-            sequence.add(new Instruction(R.id.buttonStepUp, BluetoothCommands.VALUE_UP, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonDraw), -1, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonStepUp), BluetoothCommands.VALUE_UP, commandIndex++));
         }
         for(int i = 0; i < (size - 1); i++) {
-            sequence.add(new Instruction(R.id.buttonDraw, -1, commandIndex++));
-            sequence.add(new Instruction(R.id.buttonStepLeft, BluetoothCommands.VALUE_LEFT, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonDraw), -1, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonStepLeft), BluetoothCommands.VALUE_LEFT, commandIndex++));
         }
         for(int i = 0; i < (size - 1); i++) {
-            sequence.add(new Instruction(R.id.buttonDraw, -1, commandIndex++));
-            sequence.add(new Instruction(R.id.buttonStepDown, BluetoothCommands.VALUE_DOWN, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonDraw), -1, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonStepDown), BluetoothCommands.VALUE_DOWN, commandIndex++));
         }
 
         return new Sequence(sequence);
@@ -83,6 +83,17 @@ public class SequenceBuilder {
                 sequence.add(new Instruction(direction, BluetoothCommands.VALUE_RIGHT * 2, commandIndex++));
                 position = (direction == R.id.buttonStepRight) ? position+2 : position-2;
             }
+        }
+
+        return new Sequence(sequence);
+    }
+
+    public static Sequence buildLineDown(int size, int commandIndex) {
+        List<Instruction> sequence = new ArrayList<Instruction>();
+
+        for(int i = 0; i < size; i++) {
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonDraw), -1, commandIndex++));
+            sequence.add(new Instruction(InstructionDispatcher.getCommand(R.id.buttonStepUp), BluetoothCommands.VALUE_UP, commandIndex++));
         }
 
         return new Sequence(sequence);
