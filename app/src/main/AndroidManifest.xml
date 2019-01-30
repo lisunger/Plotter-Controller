@@ -39,9 +39,8 @@
         <service
             android:name=".services.StartConnectionService"
             android:exported="false" />
-        <service
-            android:name=".services.ExecuteSequenceService"
-            android:exported="false"></service>
+
+        <activity android:name=".activities.ControlActivity"></activity>
     </application>
 
 </manifest>

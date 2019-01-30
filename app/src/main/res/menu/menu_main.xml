@@ -7,12 +7,12 @@
         android:icon="@drawable/radar"	
         android:orderInCategory="1"	
         app:showAsAction="ifRoom"	
-        android:iconTint="#ffffff"/>	
-    <item	
-        android:id="@+id/menu_disconnect"	
-        android:title="@string/menu_disconnect"	
-        android:icon="@drawable/power_plug_off"	
-        android:orderInCategory="2"	
-        app:showAsAction="ifRoom"	
-        android:iconTint="#ffffff"/>	
+        android:iconTint="#ffffff"/>
+    <item
+        android:id="@+id/menu_disconnect"
+        android:title="@string/menu_disconnect"
+        android:icon="@drawable/power_plug_off"
+        android:orderInCategory="2"
+        app:showAsAction="ifRoom"
+        android:iconTint="#ffffff"/>
 </menu>

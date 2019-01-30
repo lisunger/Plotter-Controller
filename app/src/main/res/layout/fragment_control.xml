@@ -118,30 +118,6 @@
         app:layout_constraintTop_toBottomOf="@+id/buttonStepUp" />
 
     <com.nikolay.plottercontroller.ControlButton
-        android:id="@+id/buttonRecord"
-        android:layout_width="@dimen/buttons_size"
-        android:layout_height="@dimen/buttons_size"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="@drawable/button_square"
-        android:padding="5dp"
-        android:src="@drawable/play"
-        app:layout_constraintBottom_toTopOf="@+id/checkBoxUseSteps"
-        app:layout_constraintEnd_toStartOf="@+id/buttonPlay" />
-
-    <com.nikolay.plottercontroller.ControlButton
-        android:id="@+id/buttonPlay"
-        android:layout_width="@dimen/buttons_size"
-        android:layout_height="@dimen/buttons_size"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:background="@drawable/button_square"
-        android:padding="5dp"
-        android:src="@drawable/record"
-        app:layout_constraintBottom_toTopOf="@+id/checkBoxUseSteps"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <com.nikolay.plottercontroller.ControlButton
         android:id="@+id/buttonSequence"
         android:layout_width="@dimen/buttons_size"
         android:layout_height="@dimen/buttons_size"
@@ -150,7 +126,7 @@
         android:background="@drawable/button_square"
         android:padding="5dp"
         android:src="@drawable/gesture_tap"
-        app:layout_constraintBottom_toTopOf="@+id/buttonPlay"
+        app:layout_constraintBottom_toTopOf="@+id/checkBoxUseSteps"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <EditText

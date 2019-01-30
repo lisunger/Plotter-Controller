@@ -1,12 +1,24 @@
 package com.nikolay.plottercontroller.services;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.Context;
+import android.os.Binder;
+import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.nikolay.plottercontroller.Instruction;
+import com.nikolay.plottercontroller.R;
+import com.nikolay.plottercontroller.Sequence;
 import com.nikolay.plottercontroller.activities.ControlFragment;
+import com.nikolay.plottercontroller.activities.MainActivity;
+import com.nikolay.plottercontroller.bitmap.Dither;
+import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,17 +32,50 @@ public class StartConnectionService extends IntentService {
     public static final String ACTION_HC05_RESPONSE =       "com.nikolay.plottercontroller.action.RESPONSE";
     private static BluetoothSocket mBluetoothSocket;
 
+    public static final String ACTION_SEQUENCE_STARTED = "com.nikolay.plottercontroller.action.SEQUENCE_STARTED";
+    public static final String ACTION_SEQUENCE_FINISHED = "com.nikolay.plottercontroller.action.SEQUENCE_FINISHED";
+    private boolean mCommandChannelOpen = true;
+
+    private static final String EXTRA_INSTRUCTION_INDEX = "instructionIndex";
+
+    private int mInstructionIndex = 0;
+    private int sequenceIndex = 0;
+    private boolean executingSequence = false;
+    private Sequence sequence;
+
+
+    private BroadcastReceiver mCommandReadReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (action) {
+                case StartConnectionService.ACTION_HC05_RESPONSE: {
+                    int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
+                    if (index == (mInstructionIndex - 1)) { //command has been executed
+                        mCommandChannelOpen = true;
+                        mInstructionIndex++;
+
+                        if(executingSequence) {
+                            sequenceIndex++;
+                            executeSequenceStep(sequenceIndex);
+                        }
+                    } else {
+                        // TODO command not executed correctly?
+                    }
+                    break;
+                }
+            }
+
+        }
+    };
+
+    IBinder mBinder = new LocalBinder();
+
     public StartConnectionService() {
         super("StartConnectionService");
     }
 
-    public static void startBluetoothConnection(Context context, BluetoothSocket bluetoothSocket) {
-        mBluetoothSocket = bluetoothSocket;
-        Intent intent = new Intent(context, StartConnectionService.class);
-        context.startService(intent);
-    }
-
-    public static boolean isConnected() {
+    public boolean isConnected() {
         if(mBluetoothSocket == null) {
             return false;
         } else {
@@ -39,7 +84,16 @@ public class StartConnectionService extends IntentService {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+
+        BluetoothUtils.registerCommandReadReceiver(this, mCommandReadReceiver);
+    }
+
+    @Override
     protected void onHandleIntent(Intent intent) {
+        startForeground(1, buildForegroundNotification());
+
         if (intent != null) {
             connectToHc05();
         }
@@ -63,14 +117,8 @@ public class StartConnectionService extends IntentService {
                 instructionIndex |= (value[1] & 0xff) << 16;
                 instructionIndex |= (value[2] & 0xff) << 8;
                 instructionIndex |=  value[3] & 0xff;
-//                Log.d("Lisko", "Got 4 bytes: " +
-//                        String.format("%8s", Integer.toBinaryString(value[0] & 0xFF)).replace(' ', '0') + " " +
-//                        String.format("%8s", Integer.toBinaryString(value[1] & 0xFF)).replace(' ', '0') + " " +
-//                        String.format("%8s", Integer.toBinaryString(value[2] & 0xFF)).replace(' ', '0') + " " +
-//                        String.format("%8s", Integer.toBinaryString(value[3] & 0xFF)).replace(' ', '0') + " " +
-//                        instructionIndex);
                 Intent broadcast = new Intent(ACTION_HC05_RESPONSE);
-                broadcast.putExtra(ControlFragment.EXTRA_INSTRUCTION_INDEX, instructionIndex);
+                broadcast.putExtra(EXTRA_INSTRUCTION_INDEX, instructionIndex);
                 sendBroadcast(broadcast);
 
             } catch (IOException e) {
@@ -83,7 +131,7 @@ public class StartConnectionService extends IntentService {
                 e.printStackTrace();
             }
 
-        };
+        }
 
         //When connection breaks, send broadcast and turn off
         disconnect();
@@ -92,6 +140,9 @@ public class StartConnectionService extends IntentService {
     @Override
     public void onDestroy() {
         super.onDestroy();
+
+        unregisterReceiver(mCommandReadReceiver);
+
         if(mBluetoothSocket != null) {
             try {
                 mBluetoothSocket.close();
@@ -103,6 +154,12 @@ public class StartConnectionService extends IntentService {
         Intent broadcast = new Intent(ACTION_HC05_DISCONNECTED);
         sendBroadcast(broadcast);
         Log.d(TAG, "StartConnectionService destroyed");
+        Toast.makeText(this, "StartConnectionService destroyed", Toast.LENGTH_SHORT).show();
+    }
+
+   @Override
+    public IBinder onBind(Intent intent) {
+        return mBinder;
     }
 
     private void connectToHc05() {
@@ -129,9 +186,9 @@ public class StartConnectionService extends IntentService {
     /**
      * @return true if the command has been sent, false otherwise
      */
-    public static boolean sendInstruction(int command, int value, int instructionIndex) {
+    private boolean sendInstruction(int command, int value, int instructionIndex) {
+        mCommandChannelOpen = false;
         try {
-            //Log.d("Lisko", String.format(">> %d\t%d\t%d", command, value, instructionIndex));
             OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
             // instruction beginning
@@ -156,6 +213,72 @@ public class StartConnectionService extends IntentService {
             // TODO scan if connected device is no longer there (powered off)
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public boolean sendInstruction(int command, int value) {
+        return sendInstruction(command, value, getNextInstructionIndex());
+    }
+
+    public void startSequence(Context context, int imageId) {
+
+            this.sequence = Dither.getSequenceFromImage(context, imageId);
+            this.sequenceIndex = 0;
+            this.executingSequence = true;
+            Log.d("Lisko", sequence.getInstructions().size() + "instructions");
+            executeSequenceStep(sequenceIndex);
+//            Intent broadcastStart = new Intent(ACTION_SEQUENCE_STARTED);
+//            context.sendBroadcast(broadcastStart);
+//            Intent broadcastFinish = new Intent(ACTION_SEQUENCE_FINISHED);
+//            context.sendBroadcast(broadcastFinish);
+    }
+
+    private void executeSequenceStep(int step) {
+        if(step < sequence.getInstructions().size()) {
+            mCommandChannelOpen = false;
+            Instruction i = sequence.getInstructions().get(step);
+            Log.d("Lisko", String.format(">>%.2f", (double) step / sequence.getInstructions().size()));
+            sendInstruction(i.getCommandId(), i.getSteps(), getNextInstructionIndex());
+        }
+        else {
+            executingSequence = false;
+        }
+    }
+
+    private Notification buildForegroundNotification() {
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        Notification notification = new Notification.Builder(this)
+                        .setContentTitle("Connected to Plotter")
+                        .setContentText("Hello")
+                        .setSmallIcon(R.drawable.pen)
+                        .setContentIntent(pendingIntent)
+                        .setPriority(Notification.PRIORITY_HIGH)
+                        .setTicker("Ticker text")
+                        .build();
+        return notification;
+    }
+
+    public boolean isCommandChannelOpen() {
+        return mCommandChannelOpen && !executingSequence;
+    }
+
+    public int getNextInstructionIndex() {
+        mInstructionIndex++;
+        return mInstructionIndex - 1;
+    }
+
+    public static BluetoothSocket getBluetoothSocket() {
+        return mBluetoothSocket;
+    }
+
+    public static void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
+        mBluetoothSocket = bluetoothSocket;
+    }
+
+    public class LocalBinder extends Binder {
+        public StartConnectionService getService() {
+            return StartConnectionService.this;
         }
     }
 }

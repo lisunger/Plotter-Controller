@@ -51,6 +51,10 @@ public class ScanFragment extends Fragment {
         mTextView.setVisibility(View.VISIBLE);
         mProgressBar.setVisibility(View.GONE);
     }
+
+    public void setTextConnecting() {
+        mTextView.setText("Connecting...");
+    }
 }
 
 

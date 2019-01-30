@@ -7,6 +7,9 @@ import android.view.View;
 
 public class ControlButton extends android.support.v7.widget.AppCompatImageView {
 
+    private int mCommand;
+    private int mSteps;
+
     public ControlButton(Context context) {
         super(context);
         this.setOnTouchListener(new ButtonTouchListener());
@@ -15,6 +18,22 @@ public class ControlButton extends android.support.v7.widget.AppCompatImageView 
     public ControlButton(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.setOnTouchListener(new ButtonTouchListener());
+    }
+
+    public int getCommand() {
+        return mCommand;
+    }
+
+    public void setCommand(int command) {
+        this.mCommand = command;
+    }
+
+    public int getSteps() {
+        return mSteps;
+    }
+
+    public void setSteps(int steps) {
+        this.mSteps = steps;
     }
 
     private class ButtonTouchListener implements View.OnTouchListener {

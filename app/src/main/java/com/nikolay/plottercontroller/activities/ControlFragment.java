@@ -1,14 +1,11 @@
 package com.nikolay.plottercontroller.activities;
 
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,21 +15,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.nikolay.plottercontroller.ControlButton;
-import com.nikolay.plottercontroller.Instruction;
-import com.nikolay.plottercontroller.InstructionDispatcher;
 import com.nikolay.plottercontroller.R;
-import com.nikolay.plottercontroller.Sequence;
-import com.nikolay.plottercontroller.SequenceBuilder;
-import com.nikolay.plottercontroller.bitmap.Dither;
-import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
-import com.nikolay.plottercontroller.services.ExecuteSequenceService;
-import com.nikolay.plottercontroller.services.StartConnectionService;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.nikolay.plottercontroller.bluetooth.BluetoothCommands;
 
 public class ControlFragment extends Fragment {
-    public static final String EXTRA_INSTRUCTION_INDEX = "instructionIndex";
 
     private Button mButton200;
     private Button mButton2048;
@@ -40,46 +26,8 @@ public class ControlFragment extends Fragment {
     private CheckBox mCheckboxUseSteps;
     private TextView mTextView;
     private boolean mUseSteps = false;
-    private int mInstructionIndex = 941204;
-    //private boolean mCommandChannelOpen = true;
-    private boolean mIsRecording = false;
-    private List<Instruction> mRecordedInstructions = new ArrayList<Instruction>();
-    private boolean mIsExecuting = false;
+    private ServiceConnectionActivity mService;
 
-    private BroadcastReceiver mCommandReadReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            switch (action) {
-                case StartConnectionService.ACTION_HC05_RESPONSE: {
-                    int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
-                    if (index == mInstructionIndex) { //command has been executed
-                        prepareNewCommand();
-                    } else {
-                        // TODO command not executed correctly?
-                    }
-                    break;
-                }
-                case ExecuteSequenceService.ACTION_SEQUENCE_STARTED: {
-                    mIsExecuting = true;
-                    break;
-                }
-                case ExecuteSequenceService.ACTION_SEQUENCE_FINISHED: {
-                    mIsExecuting = false;
-                    break;
-                }
-//                case ExecuteSequenceService.ACTION_COMMAND_STARTED: {
-//                    mIsExecuting = true;
-//                    break;
-//                }
-//                case ExecuteSequenceService.ACTION_COMMAND_FINISHED: {
-//                    mIsExecuting = false;
-//                    break;
-//                }
-            }
-
-        }
-    };
 
     public ControlFragment() {
         // Required empty public constructor
@@ -97,13 +45,8 @@ public class ControlFragment extends Fragment {
 
         initUi();
         setListeners();
-        BluetoothUtils.registerCommandReadReceiver(getContext(), mCommandReadReceiver);
-    }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        getContext().unregisterReceiver(mCommandReadReceiver);
+        mService = (ServiceConnectionActivity) getActivity();
     }
 
     private void initUi() {
@@ -150,6 +93,26 @@ public class ControlFragment extends Fragment {
     }
 
     private void setListeners() {
+        ((ControlButton)getView().findViewById(R.id.buttonStepLeft)).setCommand(BluetoothCommands.COMMAND_LEFT);
+        ((ControlButton)getView().findViewById(R.id.buttonStepRight)).setCommand(BluetoothCommands.COMMAND_RIGHT);
+        ((ControlButton)getView().findViewById(R.id.buttonStepUp)).setCommand(BluetoothCommands.COMMAND_UP);
+        ((ControlButton)getView().findViewById(R.id.buttonStepDown)).setCommand(BluetoothCommands.COMMAND_DOWN);
+        ((ControlButton)getView().findViewById(R.id.buttonRevLeft)).setCommand(BluetoothCommands.COMMAND_LEFT);
+        ((ControlButton)getView().findViewById(R.id.buttonRevRight)).setCommand(BluetoothCommands.COMMAND_RIGHT);
+        ((ControlButton)getView().findViewById(R.id.buttonRevUp)).setCommand(BluetoothCommands.COMMAND_UP);
+        ((ControlButton)getView().findViewById(R.id.buttonRevDown)).setCommand(BluetoothCommands.COMMAND_DOWN);
+        ((ControlButton)getView().findViewById(R.id.buttonDraw)).setCommand(BluetoothCommands.COMMAND_DOT);
+
+        ((ControlButton)getView().findViewById(R.id.buttonStepLeft)).setSteps(BluetoothCommands.VALUE_LEFT);
+        ((ControlButton)getView().findViewById(R.id.buttonStepRight)).setSteps(BluetoothCommands.VALUE_RIGHT);
+        ((ControlButton)getView().findViewById(R.id.buttonStepUp)).setSteps(BluetoothCommands.VALUE_UP);
+        ((ControlButton)getView().findViewById(R.id.buttonStepDown)).setSteps(BluetoothCommands.VALUE_DOWN);
+        ((ControlButton)getView().findViewById(R.id.buttonRevLeft)).setSteps(BluetoothCommands.ROTATION_NEMA);
+        ((ControlButton)getView().findViewById(R.id.buttonRevRight)).setSteps(BluetoothCommands.ROTATION_NEMA);
+        ((ControlButton)getView().findViewById(R.id.buttonRevUp)).setSteps(BluetoothCommands.ROTATION_BYJ);
+        ((ControlButton)getView().findViewById(R.id.buttonRevDown)).setSteps(BluetoothCommands.ROTATION_BYJ);
+        ((ControlButton)getView().findViewById(R.id.buttonDraw)).setSteps(-1);
+
         getView().findViewById(R.id.buttonStepLeft).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStepRight).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonStepUp).setOnClickListener(new CommandClickListener());
@@ -159,84 +122,25 @@ public class ControlFragment extends Fragment {
         getView().findViewById(R.id.buttonRevUp).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonRevDown).setOnClickListener(new CommandClickListener());
         getView().findViewById(R.id.buttonDraw).setOnClickListener(new CommandClickListener());
-        //getView().findViewById(R.id.buttonStop).setOnClickListener(new CommandClickListener());
-        getView().findViewById(R.id.buttonRecord).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mIsRecording) {
-                    mIsRecording = false;
-                    v.setBackgroundResource(R.drawable.button_square);
-                    ((ControlButton) v).setImageResource(R.drawable.record);
-                } else {
-                    mIsRecording = true;
-                    mRecordedInstructions.clear();
-                    v.setBackgroundResource(R.drawable.button_square_red);
-                    ((ControlButton) v).setImageResource(R.drawable.stop);
-                }
-            }
-        });
-        getView().findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO
-                for (Instruction i : mRecordedInstructions) {
-
-                }
-            }
-        });
         getView().findViewById(R.id.buttonSequence).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Sequence sequence = Dither.getSequenceFromImage(getContext(), 123, mInstructionIndex);
-                if (!mIsExecuting) {
-                    //ExecuteSequenceService.executeSequence(getContext(), sequence);
-                    ExecuteSequenceService.executeSequence(getContext(), R.drawable.fox, mInstructionIndex);
+                if (mService.isCommandChannelOpen()) {
+                    mService.startSequence(getContext(), R.drawable.sw);
                 }
             }
         });
-    }
-
-    private void prepareNewCommand() {
-        mInstructionIndex++;
-        ExecuteSequenceService.setCommandChannelOpen(true);
-    }
-
-    private void executeSequence(final List<Instruction> sequence) {
-
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
-                int sleep = 20;
-                for (Instruction i : sequence) {
-                    while (!ExecuteSequenceService.isCommandChannelOpen()) {
-                        try {
-                            Thread.sleep(sleep);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    ExecuteSequenceService.setCommandChannelOpen(false);
-                    InstructionDispatcher.sendInstruction(i.getButtonId(), i.getSteps(), i.getInstructionIndex());
-                }
-
-                mIsExecuting = false;
-            }
-        });
-
-        t.start();
     }
 
     private class CommandClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            if (mIsExecuting || !ExecuteSequenceService.isCommandChannelOpen()) {
+            if (!mService.isCommandChannelOpen()) {
                 return;
             }
 
             int steps = -1;
             if (mUseSteps) {
-
                 if (mEditTextSteps.getText() == null || mEditTextSteps.getText().toString().trim().equals("")) {
                     mEditTextSteps.setError("Set number between 0 and 32767");
                     return;
@@ -253,19 +157,17 @@ public class ControlFragment extends Fragment {
                     return;
                 }
             }
-
-            if (mIsRecording) {
-                mRecordedInstructions.add(new Instruction(v.getId(), steps, mInstructionIndex));
-                mInstructionIndex++;
-            } else {
-                ExecuteSequenceService.setCommandChannelOpen(false);
-                boolean sent = InstructionDispatcher.sendInstruction(v.getId(), steps, mInstructionIndex);
-                if (!sent) { // sending instruction failed
-                    prepareNewCommand();
-                }
+            else {
+                steps = ((ControlButton) v).getSteps();
             }
 
+            mService.sendInstruction(((ControlButton) v ).getCommand(), steps);
         }
     }
 
+    interface ServiceConnectionActivity {
+        boolean isCommandChannelOpen();
+        void startSequence(Context context, int imageId);
+        boolean sendInstruction(int command, int value);
+    }
 }

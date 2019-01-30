@@ -4,9 +4,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -20,13 +23,12 @@ import android.widget.Toast;
 import com.nikolay.plottercontroller.R;
 import com.nikolay.plottercontroller.bluetooth.BluetoothStateChangeReceiver;
 import com.nikolay.plottercontroller.bluetooth.BluetoothUtils;
-import com.nikolay.plottercontroller.services.ExecuteSequenceService;
 import com.nikolay.plottercontroller.services.StartConnectionService;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ControlFragment.ServiceConnectionActivity {
 
     // 00001101-0000-1000-8000-00805f9b34fb
     public static final String TAG = "Lisko";
@@ -44,6 +46,19 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothDevice mHc05device = null;
     private BluetoothSocket mBluetoothSocket = null;
     private UUID mUuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+
+    private StartConnectionService mService;
+
+    ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            StartConnectionService.LocalBinder binder = ((StartConnectionService.LocalBinder)service);
+            mService = binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) { }
+    };
 
     /* Listens to bluetooth turn on/off */
     BroadcastReceiver mBluetoothStateBroadcastReceiver = new BroadcastReceiver() {
@@ -79,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
                         if (device.getAddress().equals(HC05_MAC_ADDRESS)) {
                             Log.d(TAG, "Found HC-05!");
                             mHc05device = device;
+                            ((ScanFragment) mActiveFragment).setTextConnecting();
                             connectToHc05();
                         }
                         break;
@@ -125,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                     mConnected = true;
                     setMenu();
                     setControlFragment();
-                    ExecuteSequenceService.setCommandChannelOpen(true);
+                    //StartConnectionService.setCommandChannelOpen(true);
                     break;
                 }
                 case StartConnectionService.ACTION_HC05_DISCONNECTED: {
@@ -160,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
         BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
         BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
         BluetoothUtils.registerConnectionStateReceiver(this, mConnectionStateReceiver);
+
     }
 
     @Override
@@ -168,7 +185,10 @@ public class MainActivity extends AppCompatActivity {
 
         mBluetoothAdapter.cancelDiscovery();
 
-        mConnected = StartConnectionService.isConnected();
+        Intent intent = new Intent(this, StartConnectionService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+        mConnected = (mService != null) && (mService.isConnected());
         if (mConnected) {
             setControlFragment();
         } else {
@@ -204,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
             }
             case R.id.menu_disconnect: {
                 Log.d(TAG, "Bluetooth unplugged");
+                this.unbindService(mConnection);
                 stopService(new Intent(this, StartConnectionService.class));
                 break;
             }
@@ -242,8 +263,8 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mBluetoothStateBroadcastReceiver);
         unregisterReceiver(mDeviceFoundReceiver);
         unregisterReceiver(mConnectionStateReceiver);
-        stopService(new Intent(this, StartConnectionService.class));
         Log.d(TAG, "MainActivity Destroyed");
+        Toast.makeText(this, "MainActivity destroyed", Toast.LENGTH_SHORT).show();
     }
 
     private void setScanFragment() {
@@ -288,13 +309,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void connectToHc05() {
         mBluetoothAdapter.cancelDiscovery();
+
         try {
             mBluetoothSocket = mHc05device.createRfcommSocketToServiceRecord(mUuid);
-            StartConnectionService.startBluetoothConnection(this, mBluetoothSocket);
+            mService.setBluetoothSocket(mBluetoothSocket);
+            Intent intent = new Intent(this, StartConnectionService.class);
+            startService(intent);
+            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
         } catch (IOException e) {
             Log.d(TAG, "Cannot open socket.");
             e.printStackTrace();
             mConnected = false;
         }
+    }
+
+    @Override
+    public boolean isCommandChannelOpen() {
+        return mService.isCommandChannelOpen();
+    }
+
+    @Override
+    public void startSequence(Context context, int imageId) {
+        mService.startSequence(context, imageId);
+    }
+
+    @Override
+    public boolean sendInstruction(int command, int value) {
+        return mService.sendInstruction(command, value);
     }
 }

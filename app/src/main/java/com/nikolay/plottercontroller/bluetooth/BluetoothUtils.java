@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 import com.nikolay.plottercontroller.activities.MainActivity;
-import com.nikolay.plottercontroller.services.ExecuteSequenceService;
 import com.nikolay.plottercontroller.services.StartConnectionService;
 
 import java.util.Set;
@@ -50,8 +49,8 @@ public class BluetoothUtils {
     public static void registerCommandReadReceiver(Context context, BroadcastReceiver broadcastReceiver) {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(StartConnectionService.ACTION_HC05_RESPONSE);
-        intentFilter.addAction(ExecuteSequenceService.ACTION_SEQUENCE_STARTED);
-        intentFilter.addAction(ExecuteSequenceService.ACTION_SEQUENCE_FINISHED);
+//        intentFilter.addAction(StartConnectionService.ACTION_SEQUENCE_STARTED);
+//        intentFilter.addAction(StartConnectionService.ACTION_SEQUENCE_FINISHED);
         context.registerReceiver(broadcastReceiver, intentFilter);
     }
 
