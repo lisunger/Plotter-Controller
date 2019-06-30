@@ -51,7 +51,7 @@ public class StartConnectionService extends IntentService {
             switch (action) {
                 case StartConnectionService.ACTION_HC05_RESPONSE: {
                     int index = intent.getIntExtra(EXTRA_INSTRUCTION_INDEX, -1);
-                    if (index == (mInstructionIndex - 1)) { //command has been executed
+                    if (true || (index == (mInstructionIndex - 1))) { //command has been executed
                         mCommandChannelOpen = true;
                         mInstructionIndex++;
 
@@ -108,7 +108,7 @@ public class StartConnectionService extends IntentService {
         // Do nothing while connection is active
         while(mBluetoothSocket.isConnected()) {
             try {
-                while(readStream.available() < 4) { Thread.sleep(500); }
+                while(readStream.available() < 4) { Thread.sleep(1); }
                 byte[] value = new byte[4];
                 readStream.read(value, 0, 4);
 
@@ -225,23 +225,22 @@ public class StartConnectionService extends IntentService {
             this.sequence = Dither.getSequenceFromImage(context, imageId);
             this.sequenceIndex = 0;
             this.executingSequence = true;
-            Log.d("Lisko", sequence.getInstructions().size() + "instructions");
+            Log.d("Lisko", sequence.getInstructions().size() + " instructions");
+            Log.d("Lisko", "Start time:\t" + System.currentTimeMillis());
+            Toast.makeText(this, String.valueOf(sequence.getInstructions().size()), Toast.LENGTH_LONG).show();
             executeSequenceStep(sequenceIndex);
-//            Intent broadcastStart = new Intent(ACTION_SEQUENCE_STARTED);
-//            context.sendBroadcast(broadcastStart);
-//            Intent broadcastFinish = new Intent(ACTION_SEQUENCE_FINISHED);
-//            context.sendBroadcast(broadcastFinish);
     }
 
     private void executeSequenceStep(int step) {
         if(step < sequence.getInstructions().size()) {
             mCommandChannelOpen = false;
             Instruction i = sequence.getInstructions().get(step);
-            Log.d("Lisko", String.format(">>%.2f", (double) step / sequence.getInstructions().size()));
+            //Log.d("Lisko", String.format(">>%.2f", (double) step / sequence.getInstructions().size()));
             sendInstruction(i.getCommandId(), i.getSteps(), getNextInstructionIndex());
         }
         else {
             executingSequence = false;
+            Log.d("Lisko", "End time:\t" + System.currentTimeMillis());
         }
     }
 

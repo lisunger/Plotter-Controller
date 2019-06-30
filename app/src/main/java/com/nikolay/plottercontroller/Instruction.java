@@ -3,6 +3,8 @@ package com.nikolay.plottercontroller;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.Objects;
+
 public class Instruction {
 
     private int commandId;
@@ -27,6 +29,25 @@ public class Instruction {
 
     public void setSteps(int steps) {
         this.steps = steps;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this) {
+            return true;
+        }
+        if(!(obj instanceof Instruction)) {
+            return false;
+        }
+
+        Instruction i = (Instruction) obj;
+
+        return this.getCommandId() == i.getCommandId() && this.getSteps() == i.getSteps();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(commandId, steps);
     }
 
     @Override

@@ -126,7 +126,7 @@ public class ControlFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 if (mService.isCommandChannelOpen()) {
-                    mService.startSequence(getContext(), R.drawable.sw);
+                    mService.startSequence(getContext(), R.drawable.lisunger);
                 }
             }
         });
